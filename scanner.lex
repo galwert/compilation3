@@ -2,7 +2,7 @@
 %{
 #include <stdio.h>
 #include "parser.tab.hpp"
-#include "output.hpp"
+#include "hw3_output.hpp"
 %}
 
 %option yylineno
@@ -36,13 +36,38 @@ continue {return CONTINUE;}
 \{ {return LBRACE;}
 \} {return RBRACE;}
 = {return ASSIGN;}
-[<>][=]? {return RELOP;}
-[!=][=] {return RELOP;}
-[\*\/] {return MULTI;}
-[\-\+] {return PLUS;}
-{id} {return ID;}
-{number} {return NUM;}
-\"([^\n\r\"\\]|\\[rnt\"\\])+\" {return STRING;}
+[<>][=]?
+    { yylval.type=TOKEN_UNDIF;
+        yylval.value=new std::string(yytext);
+        return RELOP;}
+[!=][=] {
+        yylval.type=TOKEN_UNDIF;
+        yylval.value=new std::string(yytext);
+        return RELOP;}
+[\*\/] {
+        yylval.type=TOKEN_UNDIF;
+        yylval.value=new std::string(yytext);
+        return MULTI;}
+[\-\+] {
+        yylval.type=TOKEN_UNDIF;
+        yylval.value=new std::string(yytext);return PLUS;
+}
+
+{id} {
+        yylval.type=TOKEN_ID;
+        yylval.value=new std::string(yytext);return ID;
+    }
+{number}     {
+        yylval.type=TOKEN_INT;
+        yylval.name=std::atoi(yytext);
+        return NUM;
+        }
+\"([^\n\r\"\\]|\\[rnt\"\\])+\"
+        {
+        yylval.type=TOKEN_STRING;
+        yylval.value=new std::string(yytext);
+        return STRING;
+        }
 
 \/\/[^\r\n]*[\r|\n|\r\n]? {;}
 [\t \n\r] {;}
