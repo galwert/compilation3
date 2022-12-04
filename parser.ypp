@@ -106,23 +106,59 @@ Type:		INT  {}
 
 Exp:		LPAREN Exp RPAREN  {}
 		| Exp IF LPAREN Exp RPAREN ELSE Exp {}
-		| Exp PLUS Exp {}
-		| Exp MULTI Exp  {}
-		| ID  {}
+		| Exp PLUS Exp {
+						// Need type check and convert with map...
+						TokenType new_type;
+						int new_val;
+						if($3.name == "+")
+							new_val = $1.value + $3.value;
+						else if($3.name == "-")
+							new_val = $1.value - $3.value;
+						$$ = new Exp(new_type, stoi(new_val), new_val);
+		}
+		| Exp MULTI Exp  {
+						// Need type check and convert with map...
+						TokenType new_type;
+						int new_val;
+						if($3.name == "*")
+							new_val = $1.value * $3.value;
+						else if($3.name == "/")
+							new_val = $1.value / $3.value;
+						$$ = new Exp(new_type, stoi(new_val), new_val);
+		}
+		| ID  {
+			$$ = new Exp($1.type, $1.$1.name,0);
+		}
 		| Call  {}
 		| NUM {}
 		| NUM B  {}
-		| STRING  {}
-		| TRUE  {}
-		| FALSE  {}
-		| NOT Exp  {}
-		| Exp AND Exp  {}
-		| Exp OR Exp  {
-		                if($1.type!=TokenType::TOKEN_BOOL||$3.type!=TokenType::TOKEN_BOOL)
-		                    errorMismatch(yylineno);
-		                    $$=new Exp($1.value | $3.value, TokenType::TOKEN_BOOL
-
+		| STRING  {
+			$$ = new Exp($1.type, $1.$1.name, $1.value);
 		}
+		| TRUE  {
+			$$ = new Exp(TokenType::TOKEN_BOOL, "TRUE",1);
+		}
+		| FALSE  {
+			$$ = new Exp(TokenType::TOKEN_BOOL, "FALSE",0);
+		}
+		| NOT Exp  {
+			if($2.value == 0) $$ = new Exp($2.type, "TRUE",1);
+			else $$ = new Exp($2.type, "FALSE",0);
+		}
+		| Exp AND Exp  {
+						if($1.type! = TokenType::TOKEN_BOOL || $3.type != TokenType::TOKEN_BOOL)
+		                    errorMismatch(yylineno);
+						int new_val = $1.value & $3.value;
+						if(new_val == 0) $$ = new Exp($1.type, "FALSE", new_val);
+						else $$ = new Exp($1.type, "TRUE", new_val);
+		}
+		| Exp OR Exp  {
+		                if($1.type! = TokenType::TOKEN_BOOL || $3.type != TokenType::TOKEN_BOOL)
+		                    errorMismatch(yylineno);
+						int new_val = $1.value | $3.value;
+						if(new_val == 0) $$ = new Exp($1.type, "FALSE", new_val);
+						else $$ = new Exp($1.type, "TRUE", new_val);
+		}		
 		| Exp RELOP Exp  {}
 		| LPAREN Type RPAREN Exp   {}
 		;

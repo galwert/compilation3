@@ -37,35 +37,37 @@ continue {return CONTINUE;}
 \} {return RBRACE;}
 = {return ASSIGN;}
 [<>][=]?
-    { yylval.type=TOKEN_UNDIF;
-        yylval.value=new std::string(yytext);
+    { yylval.type = TOKEN_UNDIF;
+        yylval.name = new std::string(yytext);
         return RELOP;}
 [!=][=] {
-        yylval.type=TOKEN_UNDIF;
-        yylval.value=new std::string(yytext);
+        yylval.type = TOKEN_UNDIF;
+        yylval.name = new std::string(yytext);
         return RELOP;}
 [\*\/] {
-        yylval.type=TOKEN_UNDIF;
-        yylval.value=new std::string(yytext);
+        yylval.type = TOKEN_UNDIF;
+        yylval.name = new std::string(yytext);
         return MULTI;}
 [\-\+] {
-        yylval.type=TOKEN_UNDIF;
-        yylval.value=new std::string(yytext);return PLUS;
+        yylval.type = TOKEN_UNDIF;
+        yylval.name = new std::string(yytext);
+        return PLUS;
 }
 
 {id} {
-        yylval.type=TOKEN_ID;
-        yylval.value=new std::string(yytext);return ID;
+        yylval.type = TOKEN_ID;
+        yylval.name = new std::string(yytext);
+        return ID;
     }
 {number}     {
-        yylval.type=TOKEN_INT;
-        yylval.name=std::atoi(yytext);
+        yylval.type = TOKEN_INT;
+        yylval.name = std::atoi(yytext);
         return NUM;
         }
 \"([^\n\r\"\\]|\\[rnt\"\\])+\"
         {
-        yylval.type=TOKEN_STRING;
-        yylval.value=new std::string(yytext);
+        yylval.type = TOKEN_STRING;
+        yylval.name = new std::string(yytext);
         return STRING;
         }
 
