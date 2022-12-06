@@ -49,14 +49,14 @@ int yylex(void);
 %token RBRACE
 %%
 
-Program:	Funcs {}
+Program:	Funcs {semantic_stacks=new Stacks();}
 		;
 
 Funcs:		/*epsilon*/ {}
 		| FuncDecl Funcs {}
 		;
 
-FuncDecl:	RetType ID LPAREN Formals RPAREN LBRACE Statements RBRACE  {}
+FuncDecl:	RetType ID LPAREN Formals RPAREN LBRACE M Statements RBRACE  { end}
 		;
 
 RetType:		Type {}
@@ -99,41 +99,68 @@ ExpList:		Exp  {}
 		| Exp COMMA ExpList  {}
 		;
 
-Type:		INT  {}
-		| BYTE  {}
-		| BOOL  {}
+Type:		INT  {$$.type=TokenType::TOKEN_INT;}
+		| BYTE  {$$.type=TokenType::TOKEN_BYTE;}
+		| BOOL  {$$.type=TokenType::TOKEN_BOOL;}
 		;
 
-Exp:		LPAREN Exp RPAREN  {}
-		| Exp IF LPAREN Exp RPAREN ELSE Exp {}
+Exp:		LPAREN Exp RPAREN  {
+	$$ = new Exp($2.type, $2.name, $2.value);
+}
+
+		| Exp IF LPAREN Exp RPAREN ELSE Exp {
+		    	if($3.type! = TokenType::TOKEN_BOOL)
+            		  errorMismatch(yylineno);
+            	int new_val = $1.value & $3.value;
+            	if($3.value==1)
+            		    $$ = new Exp($1.type, $1.name, $1.value);
+            		 else
+            		    $$ = new Exp($5.type, $5.name, $5.value);
+		}
 		| Exp PLUS Exp {
-						// Need type check and convert with map...
 						TokenType new_type;
 						int new_val;
-						if($3.name == "+")
+						if($1.type==TOKEN_STRING||$1.type==TOKEN_BYTE||$3.type==TOKEN_STRING||$3.type==TOKEN_BYTE)
+							errorMismatch(yylineno);
+						if($1.type==TOKEN_INT||$3.type==TOKEN_INT)
+							new_type=TOKEN_INT;
+						else
+							new_type=TOKEN_BYTE;
+						if($2.name == "+")
 							new_val = $1.value + $3.value;
-						else if($3.name == "-")
+						else if($2.name == "-")
 							new_val = $1.value - $3.value;
-						$$ = new Exp(new_type, stoi(new_val), new_val);
+						$$ = new Exp(new_type, new_val, new_val);
 		}
 		| Exp MULTI Exp  {
-						// Need type check and convert with map...
 						TokenType new_type;
 						int new_val;
-						if($3.name == "*")
+						if($1.type==TOKEN_STRING||$1.type==TOKEN_BYTE||$3.type==TOKEN_STRING||$3.type==TOKEN_BYTE)
+							errorMismatch(yylineno);
+						if($1.type==TOKEN_INT||$3.type==TOKEN_INT)
+							new_type=TOKEN_INT;
+						else
+							new_type=TOKEN_BYTE;
+						if($2.name == "*")
 							new_val = $1.value * $3.value;
-						else if($3.name == "/")
+						else if($2.name == "/")
 							new_val = $1.value / $3.value;
-						$$ = new Exp(new_type, stoi(new_val), new_val);
+						$$ = new Exp(new_type, new_val, new_val);
 		}
 		| ID  {
-			$$ = new Exp($1.type, $1.$1.name,0);
+			$$ = new Exp($1.type, $1.name,0);
 		}
 		| Call  {}
-		| NUM {}
-		| NUM B  {}
+		| NUM {      $$.type = $1.type;
+      $$.value = $1.NAME;}
+		| NUM B  {
+		$$.type = TYPE_BYTE;
+      $$.value = $1.name;
+      if ($1.INT > INT_MAX) {
+        output::errorByteTooLarge (yylineno, $1.value);}
+        }
 		| STRING  {
-			$$ = new Exp($1.type, $1.$1.name, $1.value);
+			$$ = new Exp($1.type, $1.name, $1.value);
 		}
 		| TRUE  {
 			$$ = new Exp(TokenType::TOKEN_BOOL, "TRUE",1);
@@ -159,8 +186,36 @@ Exp:		LPAREN Exp RPAREN  {}
 						if(new_val == 0) $$ = new Exp($1.type, "FALSE", new_val);
 						else $$ = new Exp($1.type, "TRUE", new_val);
 		}		
-		| Exp RELOP Exp  {}
-		| LPAREN Type RPAREN Exp   {}
+		| Exp RELOP Exp  {
+		        if($1.type! = TokenType::TOKEN_BOOL || $3.type != TokenType::TOKEN_BOOL)
+		                    errorMismatch(yylineno);
+		        int new_val;
+						if($2.name == "==")
+							new_val = $1.val == $3.val;
+						if($2.name == "!=")
+							new_val = $1.val != $3.val;
+						if($2.name == "<")
+							new_val = $1.val < $3.val;
+						if($2.name == ">")
+							new_val = $1.val > $3.val;
+						if($2.name == "<=")
+							new_val = $1.val <= $3.val;
+						if($2.name == ">=")
+							new_val = $1.val >= $3.val;
+						if(new_val == 1) $$ = new Exp($1.type,"TRUE",new_val);
+						else $$ = new Exp($1.type,"FALSE",new_val);
+						
+		}
+		| LPAREN Type RPAREN Exp   {
+			if(convert_table[$2.type][$4.type] == TOKEN_UNDIF)
+				errorMismatch(yylineno);
+			if($2.type == TOKEN_BOOL) $$ = new Exp($2.type,$4.name,$4.VALUE);
+			if($2.type == TOKEN_INT) $$ = new Exp($2.type,$4.name,$4.VALUE);
+			if($2.type == TOKEN_BYTE){
+				if($4.type == TOKEN_INT && $4.val > 255) errorByteTooLarge(yylineno,$4.value);
+				$$ = new Exp($2.type,$4.name,$4.VALUE);
+			}
+		}
 		;
 
 
