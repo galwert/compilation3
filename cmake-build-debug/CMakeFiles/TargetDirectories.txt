@@ -1,0 +1,3 @@
+/mnt/c/Users/galwe/OneDrive - Technion/technion/SemesterE/compilation/hw3new/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/mnt/c/Users/galwe/OneDrive - Technion/technion/SemesterE/compilation/hw3new/cmake-build-debug/CMakeFiles/edit_cache.dir
+/mnt/c/Users/galwe/OneDrive - Technion/technion/SemesterE/compilation/hw3new/cmake-build-debug/CMakeFiles/hw3new.dir

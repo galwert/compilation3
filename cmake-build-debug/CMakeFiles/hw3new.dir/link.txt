@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/hw3new.dir/main.cpp.o CMakeFiles/hw3new.dir/hw3_output.cpp.o CMakeFiles/hw3new.dir/declarations.cpp.o  -o hw3new 

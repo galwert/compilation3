@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/mnt/c/Users/galwe/OneDrive - Technion/technion/SemesterE/compilation/hw3new/Declarations.h
+string
+-
+vector
+-
+stack
+-
+
+/mnt/c/Users/galwe/OneDrive - Technion/technion/SemesterE/compilation/hw3new/declarations.cpp
+Declarations.h
+/mnt/c/Users/galwe/OneDrive - Technion/technion/SemesterE/compilation/hw3new/Declarations.h
+

@@ -4,8 +4,11 @@
 using namespace std;
 int yyerror(const char * const s);
 int yylex(void);
-#include "hw3_output.hpp"
-
+#include "hw3_output.h"
+#include "declarations.h"
+extern int yylineno;
+#include <climits>
+Stacks* semantic_stacks;
 %}
 %token	ID
 %token	NUM
@@ -52,138 +55,152 @@ int yylex(void);
 Program:	Funcs {semantic_stacks=new Stacks();}
 		;
 
-Funcs:		/*epsilon*/ {errorMainMissing();}
-		| FuncDecl Funcs {if(!is_exsists("main")&&is_func("main"))
-		errorMainMissing();}
+Funcs:		/*epsilon*/ {output::errorMainMissing();}
+		| FuncDecl Funcs {if(!semantic_stacks->is_exsists("main")||!semantic_stacks->is_func("main"))
+		output::errorMainMissing();}
 		;
 
 FuncDecl:	RetType ID LPAREN Formals RPAREN LBRACE
             {
-             new_func($2.name,$1.type,$4.args);new_scope();}
-             Statements RBRACE  { exit_scope();}
+             semantic_stacks->new_func($2->name,$1->type,$4->args);semantic_stacks->new_scope();}
+             Statements RBRACE  { semantic_stacks->exit_scope();}
 		;
 
 
-RetType:		Type {$$.type=$1.type;}
-		| VOID  {$$.type=$1.type;}
+RetType:		Type {$$->type=$1->type;}
+		| VOID  {$$->type=$1->type;}
 		;
 
-Formals:		/**/{$$.args=new FormalList();}
-		| FormalsList {$$.args=new FormalList();}
+Formals:		/**/{$$=new FormalList();}
+		| FormalsList {$$=new FormalList();}
 		;
-FormalsList:	FormalDecl {$$ = new FormalList(); $$.args.push_back($1.type);}
-		| FormalDecl COMMA FormalsList {$$=$3.args.push_back($1.type);}
+FormalsList:	FormalDecl {$$ = new FormalList(); $$->args.push_back($1->type);}
+		| FormalDecl COMMA FormalsList {$3->args.push_back(new pair<TokenType,string>($1->type,$1->name));$$=$3;}
 		;
 
-FormalDecl: 	Type ID {$$=new Node($1.type,$2.name,0);}
+FormalDecl: 	Type ID {$$=new Node($1->type,$2->name,0);}
 		;
 Statements:	Statement  {}
 		| Statements Statement  {}
 		;
 
-Statement:	LBRACE Statements RBRACE  {}
-		| Type ID SC  {$$=new Node($1.type,$2.name,0);}
-		| Type ID ASSIGN Exp SC  {if(is_exsists($2.name)){errorDef(yylineno,$2.name);}
-		if(convert_table[$2.type][$4.type]==false)
-        		    { errorMismatch(yylineno);}
-        		    if($2.type==TOKEN_BYTE && $4.VALUE>255)
-        		    {output::errorByteTooLarge (yylineno, $3.value);}
-		            $$=new Node($1.type,$2.name,$4.VALUE);}
+Statement:	LBRACE {semantic_stacks->new_scope();}Statements RBRACE  {semantic_stacks->exit_scope();}
+		| Type ID SC  {if(semantic_stacks->is_exsists($1->name)){output::errorDef(yylineno,$1->name);}
+		$$=new Node($1->type,$2->name,0); semantic_stacks->new_entry($2->name,$1->type);}
+		| Type ID ASSIGN Exp SC  {if(semantic_stacks->is_exsists($2->name)){output::errorDef(yylineno,$2->name);}
+		if(convert_table[$2->type][$4->type]==false)//check which converstions are relevent
+        		    { output::errorMismatch(yylineno);}
+        		    if($2->type==TokenType::TOKEN_B && $4->value>255)
+        		    {output::errorByteTooLarge (yylineno, std::to_string($3->value));}
+		            $$=new Node($1->type,$2->name,$4->value);
+		             semantic_stacks->new_entry($2->name,$1->type);}
 		| ID ASSIGN Exp SC  {
-		if(is_exsists($1.name)){errorUndef(yylineno,$1.name);}
-		if(convert_table[$1.type][$3.type]==false)
-		    { errorMismatch(yylineno);}
-		    if($1.type==TOKEN_BYTE&&$3.VALUE>255)
-		    {output::errorByteTooLarge (yylineno, $3.value);}
-		    $1.VALUE=$3.VALUE;}
+		if(semantic_stacks->is_exsists($1->name)){output::errorUndef(yylineno,$1->name);}
+		if(convert_table[$1->type][$3->type]==false)
+		    { output::errorMismatch(yylineno);}
+		    if($1->type==TokenType::TOKEN_B&&$3->value>255)
+		    {output::errorByteTooLarge (yylineno, std::to_string($3->value));}
+		    $1->value=$3->value;}
 		| Call SC  {}
-		| RETURN SC {if(get_func()!=TOKEN_UNDIF)
-		errorMismatch(yylineno);}
-		| RETURN Exp SC {if(get_func()!=$2.type)
-                         		errorMismatch(yylineno);}
+		| RETURN SC {if(semantic_stacks->get_func_type()!=TokenType::TOKEN_UNDIF)
+		output::errorMismatch(yylineno);}
+		| RETURN Exp SC {if(semantic_stacks->get_func_type()!=$2->type)
+                         		output::errorMismatch(yylineno);}
 		| IF LPAREN Exp RPAREN Statement {}
 		| IF LPAREN Exp RPAREN Statement ELSE Statement {}
-		| WHILE LPAREN Exp RPAREN{new_scope();} Statement {exit_scope();}
-		| BREAK SC  {if(semantic_stacks.scopecounter<=0)
-                     		{errorUnexpectedBreak(yylineno);}
-		| CONTINUE SC  {if(semantic_stacks.scopecounter<=0)
-		{errorUnexpectedContinue(yylineno);}
+		| WHILE LPAREN Exp RPAREN{semantic_stacks->whilecounter++;semantic_stacks->new_scope();} Statement {semantic_stacks->whilecounter--;semantic_stacks->exit_scope();}
+		| BREAK SC  {if(semantic_stacks->whilecounter==0)
+                     		{output::errorUnexpectedBreak(yylineno);}}
+		| CONTINUE SC  {if(semantic_stacks->whilecounter==0)
+		{output::errorUnexpectedContinue(yylineno);}}
 		;
 
-Call:		ID LPAREN ExpList RPAREN  {}
-		| ID LPAREN RPAREN  {if(!is_exsists($1.name)){errorUndef(yylineno,$1.name);}
-		if(!is_exsists($1.name)){errorUndefFunc(yylineno,$1.name);
-		vector<TokenType> args=get_args($1.name);
-		
+Call:		ID LPAREN ExpList RPAREN  {if(!semantic_stacks->is_exsists($1->name)){output::errorUndef(yylineno,$1->name);}
+                                       		if(!semantic_stacks->is_exsists($1->name)){output::errorUndefFunc(yylineno,$1->name);}
+                                       		vector<TokenType> args=semantic_stacks->get_args($1->name);
+                                       		if(args.size()!=$3->vars->size())
+                                       		   output::errorPrototypeMismatch(yylineno,$1->name,$3->to_string_vector());
+                                       		for(int i=0; i<args.size();i++)
+                                       		{
+                                       		    if(args.at(i).type!=$3->vars->at(i)->type)
+                                                   		    output::errorPrototypeMismatch(yylineno,$1->name,$3->to_string_vector());
+                                       		}
+                                       		}
+		| ID LPAREN RPAREN  {
+		if(!semantic_stacks->is_exsists($1->name)){output::errorUndef(yylineno,$1->name);}
+        		if(!semantic_stacks->is_exsists($1->name)){output::errorUndefFunc(yylineno,$1->name);}
+        		vector<TokenType> args=semantic_stacks->get_args($1->name);
+        		if(args.size()!=0)
+        		    output::errorPrototypeMismatch(yylineno,$1->name,semantic_stacks->get_args($1->name));
 		}
 		;
 
-ExpList:		Exp  {$$ = new ExpList();$$.vars.push_back($1.type);}
-		| Exp COMMA ExpList  {Exp exp= new Exp($1.type,$1.name,$1.VALUE);$$=$3.vars.push_back(exp);}
+ExpList:		Exp  {ExpList *explist = new ExpList(); explist->vars->push_back($1);$$=explist;}
+		| Exp COMMA ExpList  {Exp* exp= new Exp($1->type,$1->name,$1->value);$3->vars->push_back(exp);$$=$3;}
 		;
 
-Type:		INT  {$$.type=TokenType::TOKEN_INT;}
-		| BYTE  {$$.type=TokenType::TOKEN_BYTE;}
-		| BOOL  {$$.type=TokenType::TOKEN_BOOL;}
+Type:		INT  {$$->type=TokenType::TOKEN_INT;}
+		| BYTE  {$$->type=TokenType::TOKEN_B;}
+		| BOOL  {$$->type=TokenType::TOKEN_BOOL;}
 		;
 
 Exp:		LPAREN Exp RPAREN  {
-	$$ = new Exp($2.type, $2.name, $2.value);
+	$$ = new Exp($2->type, $2->name, $2->value);
 }
 
 		| Exp IF LPAREN Exp RPAREN ELSE Exp {
-		    	if($3.type! = TokenType::TOKEN_BOOL)
-            		  errorMismatch(yylineno);
-            	int new_val = $1.value & $3.value;
-            	if($3.value==1)
-            		    $$ = new Exp($1.type, $1.name, $1.value);
+		    	if($3->type != TokenType::TOKEN_BOOL)
+            		  output::errorMismatch(yylineno);
+            	int new_val = $1->value & $3->value;
+            	if($3->value==1)
+            		    $$ = new Exp($1->type, $1->name, $1->value);
             		 else
-            		    $$ = new Exp($5.type, $5.name, $5.value);
+            		    $$ = new Exp($5->type, $5->name, $5->value);
 		}
 		| Exp PLUS Exp {
 						TokenType new_type;
 						int new_val;
-						if($1.type==TOKEN_STRING||$1.type==TOKEN_BYTE||$3.type==TOKEN_STRING||$3.type==TOKEN_BYTE)
-							errorMismatch(yylineno);
-						if($1.type==TOKEN_INT||$3.type==TOKEN_INT)
-							new_type=TOKEN_INT;
+						if($1->type==TokenType::TOKEN_STRING||$1->type==TokenType::TOKEN_B||$3->type==TokenType::TOKEN_STRING||$3->type==TokenType::TOKEN_B)
+							output::errorMismatch(yylineno);
+						if($1->type==TokenType::TOKEN_INT||$3->type==TokenType::TOKEN_INT)
+							new_type=TokenType::TOKEN_INT;
 						else
-							new_type=TOKEN_BYTE;
-						if($2.name == "+")
-							new_val = $1.value + $3.value;
-						else if($2.name == "-")
-							new_val = $1.value - $3.value;
-						$$ = new Exp(new_type, new_val, new_val);
+							new_type=TokenType::TOKEN_B;
+						if($2->name == "+")
+							new_val = $1->value + $3->value;
+						else if($2->name == "-")
+							new_val = $1->value - $3->value;
+						$$ = new Exp(new_type, std::to_string(new_val), new_val);
 		}
 		| Exp MULTI Exp  {
 						TokenType new_type;
 						int new_val;
-						if($1.type==TOKEN_STRING||$1.type==TOKEN_BYTE||$3.type==TOKEN_STRING||$3.type==TOKEN_BYTE)
-							errorMismatch(yylineno);
-						if($1.type==TOKEN_INT||$3.type==TOKEN_INT)
-							new_type=TOKEN_INT;
+						if($1->type==TokenType::TOKEN_STRING||$1->type==TokenType::TOKEN_B||$3->type==TokenType::TOKEN_STRING||$3->type==TokenType::TOKEN_B)
+							output::errorMismatch(yylineno);
+						if($1->type==TokenType::TOKEN_INT||$3->type==TokenType::TOKEN_INT)
+							new_type=TokenType::TOKEN_INT;
 						else
-							new_type=TOKEN_BYTE;
-						if($2.name == "*")
-							new_val = $1.value * $3.value;
-						else if($2.name == "/")
-							new_val = $1.value / $3.value;
-						$$ = new Exp(new_type, new_val, new_val);
+							new_type=TokenType::TOKEN_B;
+						if($2->name == "*")
+							new_val = $1->value * $3->value;
+						else if($2->name == "/")
+							new_val = $1->value / $3->value;
+						$$ = new Exp(new_type, std::to_string(new_val), new_val);
 		}
 		| ID  {
-			$$ = new Exp($1.type, $1.name,0);
+			$$ = new Exp($1->type, $1->name,0);
 		}
 		| Call  {}
-		| NUM {      $$.type = $1.type;
-      $$.value = $1.NAME;}
+		| NUM {      $$->type = $1->type;
+            $$->value = $1->value;}
 		| NUM B  {
-		$$.type = TYPE_BYTE;
-      $$.value = $1.name;
-      if ($1.INT > INT_MAX) {
-        output::errorByteTooLarge (yylineno, $1.value);}
+		$$->type = TokenType::TOKEN_B;
+      $$->value = $1->value;
+      if ($1->value > INT_MAX) {
+        output::errorByteTooLarge (yylineno, std::to_string($1->value));}
         }
 		| STRING  {
-			$$ = new Exp($1.type, $1.name, $1.value);
+			$$ = new Exp($1->type, $1->name, $1->value);
 		}
 		| TRUE  {
 			$$ = new Exp(TokenType::TOKEN_BOOL, "TRUE",1);
@@ -192,51 +209,51 @@ Exp:		LPAREN Exp RPAREN  {
 			$$ = new Exp(TokenType::TOKEN_BOOL, "FALSE",0);
 		}
 		| NOT Exp  {
-			if($2.value == 0) $$ = new Exp($2.type, "TRUE",1);
-			else $$ = new Exp($2.type, "FALSE",0);
+			if($2->value == 0) $$ = new Exp($2->type, "TRUE",1);
+			else $$ = new Exp($2->type, "FALSE",0);
 		}
 		| Exp AND Exp  {
-						if($1.type! = TokenType::TOKEN_BOOL || $3.type != TokenType::TOKEN_BOOL)
-		                    errorMismatch(yylineno);
-						int new_val = $1.value & $3.value;
-						if(new_val == 0) $$ = new Exp($1.type, "FALSE", new_val);
-						else $$ = new Exp($1.type, "TRUE", new_val);
+						if($1->type != TokenType::TOKEN_BOOL || $3->type != TokenType::TOKEN_BOOL)
+		                    output::errorMismatch(yylineno);
+						int new_val = $1->value & $3->value;
+						if(new_val == 0) $$ = new Exp($1->type, "FALSE", new_val);
+						else $$ = new Exp($1->type, "TRUE", new_val);
 		}
 		| Exp OR Exp  {
-		                if($1.type! = TokenType::TOKEN_BOOL || $3.type != TokenType::TOKEN_BOOL)
-		                    errorMismatch(yylineno);
-						int new_val = $1.value | $3.value;
-						if(new_val == 0) $$ = new Exp($1.type, "FALSE", new_val);
-						else $$ = new Exp($1.type, "TRUE", new_val);
+		                if($1->type != TokenType::TOKEN_BOOL || $3->type != TokenType::TOKEN_BOOL)
+		                    output::errorMismatch(yylineno);
+						int new_val = $1->value | $3->value;
+						if(new_val == 0) $$ = new Exp($1->type, "FALSE", new_val);
+						else $$ = new Exp($1->type, "TRUE", new_val);
 		}		
 		| Exp RELOP Exp  {
-		        if($1.type! = TokenType::TOKEN_BOOL || $3.type != TokenType::TOKEN_BOOL)
-		                    errorMismatch(yylineno);
+		        if($1->type != TokenType::TOKEN_BOOL || $3->type != TokenType::TOKEN_BOOL)
+		                    output::errorMismatch(yylineno);
 		        int new_val;
-						if($2.name == "==")
-							new_val = $1.val == $3.val;
-						if($2.name == "!=")
-							new_val = $1.val != $3.val;
-						if($2.name == "<")
-							new_val = $1.val < $3.val;
-						if($2.name == ">")
-							new_val = $1.val > $3.val;
-						if($2.name == "<=")
-							new_val = $1.val <= $3.val;
-						if($2.name == ">=")
-							new_val = $1.val >= $3.val;
-						if(new_val == 1) $$ = new Exp($1.type,"TRUE",new_val);
-						else $$ = new Exp($1.type,"FALSE",new_val);
+						if($2->name == "==")
+							new_val = $1->value == $3->value;
+						if($2->name == "!=")
+							new_val = $1->value != $3->value;
+						if($2->name == "<")
+							new_val = $1->value < $3->value;
+						if($2->name == ">")
+							new_val = $1->value > $3->value;
+						if($2->name == "<=")
+							new_val = $1->value <= $3->value;
+						if($2->name == ">=")
+							new_val = $1->value >= $3->value;
+						if(new_val == 1) $$ = new Exp($1->type,"TRUE",new_val);
+						else $$ = new Exp($1->type,"FALSE",new_val);
 						
 		}
 		| LPAREN Type RPAREN Exp   {
-			if(convert_table[$2.type][$4.type] == TOKEN_UNDIF)
-				errorMismatch(yylineno);
-			if($2.type == TOKEN_BOOL) $$ = new Exp($2.type,$4.name,$4.VALUE);
-			if($2.type == TOKEN_INT) $$ = new Exp($2.type,$4.name,$4.VALUE);
-			if($2.type == TOKEN_BYTE){
-				if($4.type == TOKEN_INT && $4.val > 255) errorByteTooLarge(yylineno,$4.value);
-				$$ = new Exp($2.type,$4.name,$4.VALUE);
+			if(convert_table[$2->type][$4->type] == TokenType::TOKEN_UNDIF)
+				output::errorMismatch(yylineno);
+			if($2->type == TokenType::TOKEN_BOOL) $$ = new Exp($2->type,$4->name,$4->value);
+			if($2->type == TokenType::TOKEN_INT) $$ = new Exp($2->type,$4->name,$4->value);
+			if($2->type == TokenType::TOKEN_B){
+				if($4->type == TokenType::TOKEN_INT && $4->value > 255) output::errorByteTooLarge(yylineno,std::to_string($4->value));
+				$$ = new Exp($2->type,$4->name,$4->value);
 			}
 		}
 		;

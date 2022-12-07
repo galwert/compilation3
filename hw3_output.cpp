@@ -1,5 +1,5 @@
 #include <iostream>
-#include "hw3_output.hpp"
+#include "hw3_output.h"
 #include <sstream>
 
 using namespace std;
@@ -75,7 +75,7 @@ void output::errorUnexpectedBreak(int lineno) {
 }
 
 void output::errorUnexpectedContinue(int lineno) {
-    cout << "line " << lineno << ":" << " unexpected continue statement" << endl;	
+    cout << "line " << lineno << ":" << " unexpected continue statement" << endl;
 }
 
 void output::errorMainMissing() {
