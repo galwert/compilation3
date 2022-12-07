@@ -52,51 +52,74 @@ int yylex(void);
 Program:	Funcs {semantic_stacks=new Stacks();}
 		;
 
-Funcs:		/*epsilon*/ {}
-		| FuncDecl Funcs {}
+Funcs:		/*epsilon*/ {errorMainMissing();}
+		| FuncDecl Funcs {if(!is_exsists("main")&&is_func("main"))
+		errorMainMissing();}
 		;
 
-FuncDecl:	RetType ID LPAREN Formals RPAREN LBRACE M Statements RBRACE  { end}
+FuncDecl:	RetType ID LPAREN Formals RPAREN LBRACE
+            {
+             new_func($2.name,$1.type,$4.args);new_scope();}
+             Statements RBRACE  { exit_scope();}
 		;
 
-RetType:		Type {}
-		| VOID  {}
+
+RetType:		Type {$$.type=$1.type;}
+		| VOID  {$$.type=$1.type;}
 		;
 
-Formals:		/**/{}
-		| FormalsList {}
+Formals:		/**/{$$.args=new FormalList();}
+		| FormalsList {$$.args=new FormalList();}
+		;
+FormalsList:	FormalDecl {$$ = new FormalList(); $$.args.push_back($1.type);}
+		| FormalDecl COMMA FormalsList {$$=$3.args.push_back($1.type);}
 		;
 
-FormalsList:	FormalDecl {}
-		| FormalDecl COMMA FormalsList {}
-		;
-
-FormalDecl: 	Type ID {}
+FormalDecl: 	Type ID {$$=new Node($1.type,$2.name,0);}
 		;
 Statements:	Statement  {}
 		| Statements Statement  {}
 		;
 
 Statement:	LBRACE Statements RBRACE  {}
-		| Type ID SC  {}
-		| Type ID ASSIGN Exp SC  {}
-		| ID ASSIGN Exp SC  {}
+		| Type ID SC  {$$=new Node($1.type,$2.name,0);}
+		| Type ID ASSIGN Exp SC  {if(is_exsists($2.name)){errorDef(yylineno,$2.name);}
+		if(convert_table[$2.type][$4.type]==false)
+        		    { errorMismatch(yylineno);}
+        		    if($2.type==TOKEN_BYTE && $4.VALUE>255)
+        		    {output::errorByteTooLarge (yylineno, $3.value);}
+		            $$=new Node($1.type,$2.name,$4.VALUE);}
+		| ID ASSIGN Exp SC  {
+		if(is_exsists($1.name)){errorUndef(yylineno,$1.name);}
+		if(convert_table[$1.type][$3.type]==false)
+		    { errorMismatch(yylineno);}
+		    if($1.type==TOKEN_BYTE&&$3.VALUE>255)
+		    {output::errorByteTooLarge (yylineno, $3.value);}
+		    $1.VALUE=$3.VALUE;}
 		| Call SC  {}
-		| RETURN SC {}
-		| RETURN Exp SC {}
+		| RETURN SC {if(get_func()!=TOKEN_UNDIF)
+		errorMismatch(yylineno);}
+		| RETURN Exp SC {if(get_func()!=$2.type)
+                         		errorMismatch(yylineno);}
 		| IF LPAREN Exp RPAREN Statement {}
 		| IF LPAREN Exp RPAREN Statement ELSE Statement {}
-		| WHILE LPAREN Exp RPAREN Statement {}
-		| BREAK SC  {}
-		| CONTINUE SC  {}
+		| WHILE LPAREN Exp RPAREN{new_scope();} Statement {exit_scope();}
+		| BREAK SC  {if(semantic_stacks.scopecounter<=0)
+                     		{errorUnexpectedBreak(yylineno);}
+		| CONTINUE SC  {if(semantic_stacks.scopecounter<=0)
+		{errorUnexpectedContinue(yylineno);}
 		;
 
 Call:		ID LPAREN ExpList RPAREN  {}
-		| ID LPAREN RPAREN  {}
+		| ID LPAREN RPAREN  {if(!is_exsists($1.name)){errorUndef(yylineno,$1.name);}
+		if(!is_exsists($1.name)){errorUndefFunc(yylineno,$1.name);
+		vector<TokenType> args=get_args($1.name);
+		
+		}
 		;
 
-ExpList:		Exp  {}
-		| Exp COMMA ExpList  {}
+ExpList:		Exp  {$$ = new ExpList();$$.vars.push_back($1.type);}
+		| Exp COMMA ExpList  {Exp exp= new Exp($1.type,$1.name,$1.VALUE);$$=$3.vars.push_back(exp);}
 		;
 
 Type:		INT  {$$.type=TokenType::TOKEN_INT;}

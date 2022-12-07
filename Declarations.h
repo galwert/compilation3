@@ -33,7 +33,7 @@ TokenType convert_table[5][5]={
         /*TOKEN_B*/,TOKEN_INT,
         /*TOKEN_BOOL*/,TOKEN_UNDIF,/*not sure*/
         /*TOKEN_STRING*/,TOKEN_UNDIF
-    }
+    },
     {/*B TO*/
         /*TOKEN_UNDIF*/,TOKEN_UNDIF,
         /*TOKEN_INT*/,TOKEN_B,
@@ -67,6 +67,7 @@ public:
 
 class Exp : class Node
 {
+    Exp(TokenType type,std::string name,int VALUE)=default;
 };
 
 class table_entry
@@ -91,12 +92,12 @@ class stacks
         offsets_stack= new stack<int>();
         scopecounter=0;
         tables_stack.push_back(new vector<table_entry>());
-        vector<TokenType> args= new vector<TokenType ();
+        vector<TokenType> args= new vector<TokenType> ();
         args.push_back(TOKEN_STRING);
         tables_stack.at(0).pushback(new table_entry("print",TOKEN_UNDIF,0,true,args))
-        args= new vector<TokenType ();
+        args= new vector<TokenType> ();
         args.push_back(TOKEN_INT);
-        tables_stack.at(0).pushback(new table_entry("printi",TOKEN_UNDIF,0z,true,args))
+        tables_stack.at(0).pushback(new table_entry("printi",TOKEN_UNDIF,0,true,args))
     }
 
     void new_scope()
@@ -113,7 +114,7 @@ class stacks
         }
     }
     void exit_scope()
-    {
+    {scopecounter--;
         tables_stack.pop_back();
 
         offsets_stack.pop();
@@ -158,6 +159,16 @@ class stacks
                    return tables_stack.at(i).at(j).is_func;
             }
         }
+        return false;
+    }
+
+    TokenType get_func_type()
+    {
+            for(int j=0;j<tables_stack.at(0).size();j++)
+            {
+                if(tables_stack.at(0).at(j).name==name)
+                    return tables_stack.at(i).at(j).type;
+            }
         return false;
     }
     TokenType get_type(string name)
@@ -205,6 +216,7 @@ class Call: public Node
 class ExpList: public Node
 {
     vector<Exp> vars;
+    ExpList()=default;
 };
 class FuncDecl: public Node
 {
