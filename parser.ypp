@@ -1,13 +1,14 @@
 
 %{
 #include <iostream>
+#include "parser.hpp"
+#include "hw3_output.h"
+#include <climits>
+extern int yylineno;
 using namespace std;
 int yyerror(const char * const s);
 int yylex(void);
-#include "hw3_output.h"
-#include "declarations.h"
-extern int yylineno;
-#include <climits>
+
 Stacks* semantic_stacks;
 %}
 %token	ID
@@ -61,8 +62,7 @@ Funcs:		/*epsilon*/ {output::errorMainMissing();}
 		;
 
 FuncDecl:	RetType ID LPAREN Formals RPAREN LBRACE
-            {
-             semantic_stacks->new_func($2->name,$1->type,$4->args);semantic_stacks->new_scope();}
+            {semantic_stacks->new_func($2->name,$1->type,$4->args);semantic_stacks->new_scope();}
              Statements RBRACE  { semantic_stacks->exit_scope();}
 		;
 
@@ -149,13 +149,12 @@ Exp:		LPAREN Exp RPAREN  {
 }
 
 		| Exp IF LPAREN Exp RPAREN ELSE Exp {
-		    	if($3->type != TokenType::TOKEN_BOOL)
+		    	if($4->type != TokenType::TOKEN_BOOL)
             		  output::errorMismatch(yylineno);
-            	int new_val = $1->value & $3->value;
             	if($3->value==1)
             		    $$ = new Exp($1->type, $1->name, $1->value);
             		 else
-            		    $$ = new Exp($5->type, $5->name, $5->value);
+            		    $$ = new Exp($6->type, $6->name, $6->value);
 		}
 		| Exp PLUS Exp {
 						TokenType new_type;
