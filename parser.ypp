@@ -2,7 +2,7 @@
 %{
 #include <iostream>
 #include "parser.hpp"
-#include "hw3_output.h"
+#include "hw3_output.hpp"
 #include <climits>
 extern int yylineno;
 using namespace std;
@@ -62,7 +62,7 @@ Funcs:		/*epsilon*/ {output::errorMainMissing();}
 		;
 
 FuncDecl:	RetType ID LPAREN Formals RPAREN LBRACE
-            {semantic_stacks->new_func($2->name,$1->type,$4->args);semantic_stacks->new_scope();}
+            {semantic_stacks->new_func($2->name,$1->type,$4->get_args());semantic_stacks->new_scope();}
              Statements RBRACE  { semantic_stacks->exit_scope();}
 		;
 
@@ -74,8 +74,8 @@ RetType:		Type {$$->type=$1->type;}
 Formals:		/**/{$$=new FormalList();}
 		| FormalsList {$$=new FormalList();}
 		;
-FormalsList:	FormalDecl {$$ = new FormalList(); $$->args.push_back($1->type);}
-		| FormalDecl COMMA FormalsList {$3->args.push_back(new pair<TokenType,string>($1->type,$1->name));$$=$3;}
+FormalsList:	FormalDecl {$$ = new FormalList(); $$->get_args()->push_back(pair<TokenType,string>($1->type,$1->name));}
+		| FormalDecl COMMA FormalsList {$3->get_args()->push_back(pair<TokenType,string>($1->type,$1->name));$$=$3;}
 		;
 
 FormalDecl: 	Type ID {$$=new Node($1->type,$2->name,0);}
@@ -117,26 +117,26 @@ Statement:	LBRACE {semantic_stacks->new_scope();}Statements RBRACE  {semantic_st
 
 Call:		ID LPAREN ExpList RPAREN  {if(!semantic_stacks->is_exsists($1->name)){output::errorUndef(yylineno,$1->name);}
                                        		if(!semantic_stacks->is_exsists($1->name)){output::errorUndefFunc(yylineno,$1->name);}
-                                       		vector<TokenType> args=semantic_stacks->get_args($1->name);
-                                       		if(args.size()!=$3->vars->size())
-                                       		   output::errorPrototypeMismatch(yylineno,$1->name,$3->to_string_vector());
-                                       		for(int i=0; i<args.size();i++)
+                                       		vector<pair<TokenType,string>>* args=semantic_stacks->get_args($1->name);
+                                       		if(args->size()!=$3->get_vars()->size())
+                                       		   output::errorPrototypeMismatch(yylineno,$1->name,*($3->to_string_vector()));
+                                       		for(int i=0; i<args->size();i++)
                                        		{
-                                       		    if(args.at(i).type!=$3->vars->at(i)->type)
-                                                   		    output::errorPrototypeMismatch(yylineno,$1->name,$3->to_string_vector());
+                                       		    if(args->at(i).first != $3->get_vars()->at(i).type)
+                                                   		    output::errorPrototypeMismatch(yylineno,$1->name,*($3->to_string_vector()));
                                        		}
                                        		}
 		| ID LPAREN RPAREN  {
 		if(!semantic_stacks->is_exsists($1->name)){output::errorUndef(yylineno,$1->name);}
         		if(!semantic_stacks->is_exsists($1->name)){output::errorUndefFunc(yylineno,$1->name);}
-        		vector<TokenType> args=semantic_stacks->get_args($1->name);
-        		if(args.size()!=0)
-        		    output::errorPrototypeMismatch(yylineno,$1->name,semantic_stacks->get_args($1->name));
+        		vector<pair<TokenType,string>>* args=semantic_stacks->get_args($1->name);
+        		if(args->size()!=0)
+        		    output::errorPrototypeMismatch(yylineno,$1->name,*(semantic_stacks->get_string_args($1->name)));
 		}
 		;
 
-ExpList:		Exp  {ExpList *explist = new ExpList(); explist->vars->push_back($1);$$=explist;}
-		| Exp COMMA ExpList  {Exp* exp= new Exp($1->type,$1->name,$1->value);$3->vars->push_back(exp);$$=$3;}
+ExpList:		Exp  {ExpList *explist = new ExpList(); explist->get_vars()->push_back(Exp(*$1));$$=explist;}
+		| Exp COMMA ExpList  {Exp* exp= new Exp($1->type,$1->name,$1->value);$3->get_vars()->push_back(Exp(*exp));$$=$3;}
 		;
 
 Type:		INT  {$$->type=TokenType::TOKEN_INT;}
@@ -267,6 +267,3 @@ int yyerror(const char* const s)
   exit(1);
 }
 
-int main(){
-	return yyparse();
-}

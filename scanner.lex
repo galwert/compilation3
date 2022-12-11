@@ -4,7 +4,7 @@
 #include "parser.hpp"
 #define YYSTYPE Node*
 #include "parser.tab.hpp"
-#include "hw3_output.h"
+#include "hw3_output.hpp"
 
 %}
 

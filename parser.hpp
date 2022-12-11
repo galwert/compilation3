@@ -1,8 +1,8 @@
 //
 // Created by galwe on 12/4/2022.
 //
-#ifndef HW3_DECLARATIONS_H
-#define HW3_DECLARATIONS_H
+#ifndef PARSER_H
+#define PARSER_H
 #define YYSTYPE Node*
 #include <string>
 #include <vector>
@@ -57,6 +57,8 @@ TokenType convert_table[5][5]={
         }
 };
 
+class Exp;
+
 class Node
 {
 public:
@@ -64,12 +66,18 @@ public:
     std::string name;
     int value;
     Node(TokenType type,std::string name,int value);
+    virtual vector<pair<TokenType,string>>* get_args(){};
+    virtual void set_args(vector<pair<TokenType,string>>* args){};
+    virtual  vector<Exp>* get_vars(){};
+    virtual void set_vars( vector<Exp*>* vars){};
+    virtual vector<string>* to_string_vector(){};
 };
 
 class Exp : public Node
 {
 public:
     Exp(TokenType type,std::string name,int value);
+    Exp(const Node &exp);
 };
 
 class table_entry
@@ -78,10 +86,10 @@ public:
     string name;
     TokenType type;
     int offset;
-    vector<TokenType>* arguments;
+    vector<pair<TokenType,string>>* arguments;
     bool is_func;
 
-    table_entry(std::string name,TokenType type,int offset=0, bool is_func=false, vector<TokenType>* arguments=new vector<TokenType>());
+    table_entry(std::string name,TokenType type,int offset=0, bool is_func=false, vector<pair<TokenType,string>>* arguments = new vector<pair<TokenType,string>>());
 };
 
 class Stacks
@@ -94,19 +102,14 @@ public:
     void new_scope();
     void exit_scope();
     void new_entry(string name, TokenType type);
-    void new_func(string name, TokenType type,vector<TokenType>* arguments);
+    void new_func(string name, TokenType type,vector<pair<TokenType,string>>* arguments);
     bool is_exsists(string name);
     bool is_func(string name);
     TokenType get_func_type(string name);
     TokenType get_func_type();
     TokenType get_type(string name);
-    vector<TokenType> get_args(string name);
-};
-
-class Number: public Node
-{
-public:
-    Number(TokenType type,std::string name,int value): Node( type, name, value){}
+    vector<pair<TokenType,string>>* get_args(string name);
+    vector<string>* get_string_args(string name);
 };
 
 class FormalList: public Node
@@ -114,6 +117,8 @@ class FormalList: public Node
 public:
     vector<pair<TokenType,string>>* args;
     FormalList();
+    vector<pair<TokenType,string>>* get_args();
+    void set_args(vector<pair<TokenType,string>>* args);
 };
 
 class Call: public Node
@@ -121,14 +126,18 @@ class Call: public Node
 public:
     vector<pair<TokenType,string>>* args;
     Call(TokenType type,std::string name,int value);
+    vector<pair<TokenType,string>>* get_args();
+    void set_args(vector<pair<TokenType,string>>* args);
 };
 
 class ExpList: public Node
 {
 public:
-    vector<Exp*>* vars;
+    vector<Exp>* vars;
     ExpList();
-    vector<string> to_string_vector();
+    vector<Exp>* get_vars();
+    void set_vars( vector<Exp>* vars);
+    vector<string>* to_string_vector();
 };
 
-#endif //HW3_DECLARATIONS_H
+#endif
