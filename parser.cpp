@@ -13,9 +13,10 @@ Node::Node(TokenType type,std::string name,int value) {
 
 // Exp
 Exp::Exp(TokenType type,std::string name,int value): Node( type, name, value){}
+Exp::Exp(const Node &exp): Node( exp.type, exp.name, exp.value){}
 
 // Table entry
-table_entry::table_entry(std::string name,TokenType type,int offset,bool is_func, vector<TokenType>* arguments){
+table_entry::table_entry(std::string name,TokenType type,int offset,bool is_func, vector<pair<TokenType,string>>* arguments){
     this->type=type;
     this->name=name;
     this->offset=offset;
@@ -29,11 +30,11 @@ Stacks::Stacks(){
     offsets_stack= new stack<int>();
     whilecounter=0;
     tables_stack->push_back(new vector<table_entry*>());
-    vector<TokenType>* args= new vector<TokenType> ();
-    args->push_back(TOKEN_STRING);
+    vector<pair<TokenType,string>>* args= new vector<pair<TokenType,string>> ();
+    args->push_back(pair<TokenType,string>(TOKEN_STRING,""));
     tables_stack->at(0)->push_back(new table_entry("print",TOKEN_UNDIF,0,true,args));
-    args= new vector<TokenType> ();
-    args->push_back(TOKEN_INT);
+    args= new vector<pair<TokenType,string>> ();
+    args->push_back(pair<TokenType,string>(TOKEN_INT,""));
     tables_stack->at(0)->push_back(new table_entry("printi",TOKEN_UNDIF,0,true,args));
 }
 void Stacks::new_scope(){
@@ -53,7 +54,7 @@ void Stacks::new_entry(string name, TokenType type){
     tables_stack->back()->push_back(new table_entry(name,type,off));
     offsets_stack->push(off+1);
 }
-void Stacks::new_func(string name, TokenType type,vector<TokenType>* arguments){
+void Stacks::new_func(string name, TokenType type,vector<pair<TokenType,string>>* arguments){
     tables_stack->back()->push_back(new table_entry(name,type,0,true,arguments));
     new_scope();
     for(int i=0; i<arguments->size();i++)
@@ -100,36 +101,78 @@ TokenType Stacks::get_type(string name)
     }
     return TOKEN_UNDIF;
 }
-vector<TokenType> Stacks::get_args(string name){
+vector<pair<TokenType,string>>* Stacks::get_args(string name){
     for(int i=0; i<tables_stack->size();i++)
     {
         int size=tables_stack->at(i)->size();
         for(int j=0;j<size;j++)
             if(tables_stack->at(i)->at(j)->name==name)
-                return *(tables_stack->at(i)->at(j)->arguments);
+                return tables_stack->at(i)->at(j)->arguments;
     }
     return {};
+}
+vector<string>* Stacks::get_string_args(string name){
+    for(int i=0; i<tables_stack->size();i++)
+    {
+        int size=tables_stack->at(i)->size();
+        for(int j=0;j<size;j++)
+        {
+            if(tables_stack->at(i)->at(j)->name==name)
+            {
+                vector<string>* string_args = new vector<string>();
+                vector<pair<TokenType,string>>* arguments = tables_stack->at(i)->at(j)->arguments;
+                for(int k = 0;k<arguments->size();k++)
+                    string_args->push_back(arguments->at(k).second);
+                return string_args;
+            }
+        }
+    }
+    return nullptr;
 }
 
 // FormalList
 FormalList::FormalList(): Node( TOKEN_UNDIF, "", 0){
     this->args=new vector<pair<TokenType,string>>();
 }
+vector<pair<TokenType,string>>* FormalList::get_args()
+{
+    return this->args;
+}
+void FormalList::set_args(vector<pair<TokenType,string>>* args)
+{
+    this->args = args;
+}
 
 // Call
 Call::Call(TokenType type,std::string name,int value): Node( type, name, value){
     this->args=new vector<pair<TokenType,string>>();
 }
+vector<pair<TokenType,string>>* Call::get_args()
+{
+    return this->args;
+}
+void Call::set_args(vector<pair<TokenType,string>>* args)
+{
+    this->args = args;
+}
 
 // ExpList
  ExpList::ExpList(): Node( TOKEN_UNDIF, "", 0){
-    this->vars=new vector<Exp*>();
+    this->vars = new vector<Exp>();
 }
-vector<string> ExpList::to_string_vector(){
-    vector<string> new_vars= vector<string>();
+vector<string>* ExpList::to_string_vector(){
+    vector<string>* new_vars = new vector<string>();
     for(int i=0; i<this->vars->size();i++)
     {
-        new_vars.push_back(vars->at(i)->name);
+        new_vars->push_back(vars->at(i).name);
     }
     return  new_vars;
+}
+void ExpList::set_vars( vector<Exp>* vars)
+{
+    this->vars = vars;
+}
+vector<Exp>* ExpList::get_vars()
+{
+    return this->vars;
 }
