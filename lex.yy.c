@@ -945,54 +945,62 @@ YY_RULE_SETUP
 case 24:
 YY_RULE_SETUP
 #line 42 "scanner.lex"
-{ yylval->type = TOKEN_UNDIF;
+{
+yylval=new Node();
+yylval->type = TOKEN_UNDIF;
         yylval->name = std::string(yytext);
         return RELOP;}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 45 "scanner.lex"
+#line 47 "scanner.lex"
 {
+yylval=new Node();
         yylval->type = TOKEN_UNDIF;
         yylval->name = std::string(yytext);
         return RELOP;}
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 49 "scanner.lex"
+#line 52 "scanner.lex"
 {
+yylval=new Node();
         yylval->type = TOKEN_UNDIF;
         yylval->name = std::string(yytext);
         return MULTI;}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 53 "scanner.lex"
+#line 57 "scanner.lex"
 {
+yylval=new Node();
         yylval->type = TOKEN_UNDIF;
         yylval->name = std::string(yytext);
         return PLUS;}
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 58 "scanner.lex"
+#line 63 "scanner.lex"
 {
+yylval=new Node();
         yylval->type = TOKEN_ID;
         yylval->name = std::string(yytext);
         return ID;}
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 62 "scanner.lex"
+#line 68 "scanner.lex"
 {
+yylval=new Node();
         yylval->type = TOKEN_INT;
         yylval->value = std::atoi(yytext);
         return NUM;}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 66 "scanner.lex"
+#line 73 "scanner.lex"
 {
+yylval=new Node();
         yylval->type = TOKEN_STRING;
         yylval->name = std::string(yytext);
         return STRING;}
@@ -1000,26 +1008,26 @@ YY_RULE_SETUP
 case 31:
 /* rule 31 can match eol */
 YY_RULE_SETUP
-#line 71 "scanner.lex"
+#line 79 "scanner.lex"
 {;}
 	YY_BREAK
 case 32:
 /* rule 32 can match eol */
 YY_RULE_SETUP
-#line 72 "scanner.lex"
+#line 80 "scanner.lex"
 {;}
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 73 "scanner.lex"
+#line 81 "scanner.lex"
 {output::errorLex(yylineno); exit(1);}
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 75 "scanner.lex"
+#line 83 "scanner.lex"
 ECHO;
 	YY_BREAK
-#line 1023 "lex.yy.c"
+#line 1031 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -2036,7 +2044,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 75 "scanner.lex"
+#line 83 "scanner.lex"
 
 
 

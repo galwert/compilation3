@@ -10,7 +10,11 @@ Node::Node(TokenType type,std::string name,int value) {
     this->name=name;
     this->value=value;
 }
-
+Node::Node() {
+    this->type=TOKEN_UNDIF;
+    this->name="";
+    this->value=0;
+}
 
 // Exp
 Exp::Exp(TokenType type,std::string name,int value): Node( type, name, value){}

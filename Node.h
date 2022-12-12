@@ -25,6 +25,7 @@ public:
     std::string name;
     int value;
     Node(TokenType type,std::string name,int value);
+    Node();
     virtual vector<pair<TokenType,string>>* get_args(){return new vector<pair<TokenType,string>>();};
     virtual void set_args(vector<pair<TokenType,string>>* args){};
     virtual  vector<Exp>* get_vars(){return new vector<Exp>();};

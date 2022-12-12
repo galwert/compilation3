@@ -49,10 +49,10 @@ TokenType convert_table[5][5]={
 
 
 %}
-%token	ID
+
 %token	NUM
 %token	STRING
-
+%token	ID
 %token	VOID
 %token	INT
 %token	BYTE
@@ -84,14 +84,14 @@ TokenType convert_table[5][5]={
 %left	MULTI
 %right NOT
 %right LPAREN
-%right RPAREN
+%left RPAREN
 %left	ELSE
 %right	IF
 %token LBRACE
 %token RBRACE
 %%
 
-Program:    Funcs {semantic_stacks=new Stacks();}
+Program:   {semantic_stacks=new Stacks();} Funcs {semantic_stacks->exit_scope();}
 		;
 
 Funcs:		/*epsilon*/ {if(!semantic_stacks->is_exsists("main")||!semantic_stacks->is_func("main"))
@@ -99,18 +99,17 @@ Funcs:		/*epsilon*/ {if(!semantic_stacks->is_exsists("main")||!semantic_stacks->
 		| FuncDecl Funcs {}
 		;
 
-FuncDecl:	RetType ID LPAREN Formals RPAREN LBRACE
-            {semantic_stacks->new_func($2->name,$1->type,$4->get_args());semantic_stacks->new_scope();}
-             Statements RBRACE  { semantic_stacks->exit_scope();}
+FuncDecl:	RetType ID LPAREN Formals RPAREN LBRACE {semantic_stacks->new_func($2->name,$1->type,$4->get_args());}
+             Statements RBRACE { semantic_stacks->exit_scope();}
 		;
 
 
-RetType:		Type {$$->type=$1->type;}
-		| VOID  {$$->type=$1->type;}
+RetType:		Type {$$=$1;}
+		| VOID {$$=new Node(TokenType::TOKEN_UNDIF,"",0);}
 		;
 
 Formals:		/**/{$$=new FormalList();}
-		| FormalsList {$$=new FormalList();}
+		| FormalsList {$$=$1;}
 		;
 FormalsList:	FormalDecl {$$ = new FormalList(); $$->get_args()->push_back(pair<TokenType,string>($1->type,$1->name));}
 		| FormalDecl COMMA FormalsList {$3->get_args()->push_back(pair<TokenType,string>($1->type,$1->name));$$=$3;}
@@ -122,46 +121,47 @@ Statements:	Statement  {}
 		| Statements Statement  {}
 		;
 
-Statement:	LBRACE {semantic_stacks->new_scope();}Statements RBRACE  {semantic_stacks->exit_scope();}
-		| Type ID SC  {if(semantic_stacks->is_exsists($1->name)){output::errorDef(yylineno,$1->name);}
+Statement:	LBRACE {semantic_stacks->new_scope();}Statements RBRACE {semantic_stacks->exit_scope();}
+		| Type ID SC {if(semantic_stacks->is_exsists($1->name)){output::errorDef(yylineno,$1->name);}
 		$$=new Node($1->type,$2->name,0); semantic_stacks->new_entry($2->name,$1->type);}
 		| Type ID ASSIGN Exp SC  {if(semantic_stacks->is_exsists($2->name)){output::errorDef(yylineno,$2->name);}
-		if(convert_table[$2->type][$4->type]==false)//check which converstions are relevent
+		if(convert_table[$1->type][$4->type]==false)//check which converstions are relevent
         		    { output::errorMismatch(yylineno);}
         		    if($2->type==TokenType::TOKEN_B && $4->value>255)
         		    {output::errorByteTooLarge (yylineno, std::to_string($3->value));}
 		            $$=new Node($1->type,$2->name,$4->value);
 		             semantic_stacks->new_entry($2->name,$1->type);}
-		| ID ASSIGN Exp SC  {
+		| ID ASSIGN Exp SC {
 		if(semantic_stacks->is_exsists($1->name)){output::errorUndef(yylineno,$1->name);}
 		if(convert_table[$1->type][$3->type]==false)
 		    { output::errorMismatch(yylineno);}
 		    if($1->type==TokenType::TOKEN_B&&$3->value>255)
 		    {output::errorByteTooLarge (yylineno, std::to_string($3->value));}
 		    $1->value=$3->value;}
-		| Call SC  {}
+		| Call SC {}
 		| RETURN SC {if(semantic_stacks->get_func_type()!=TokenType::TOKEN_UNDIF)
 		output::errorMismatch(yylineno);}
 		| RETURN Exp SC {if(semantic_stacks->get_func_type()!=$2->type)
                          		output::errorMismatch(yylineno);}
-		| IF LPAREN Exp RPAREN Statement {}
-		| IF LPAREN Exp RPAREN Statement ELSE Statement {}
+		| IfExp RPAREN  Statement {semantic_stacks->exit_scope();}
+		| IfExp Statement ELSE Statement {semantic_stacks->exit_scope();}
 		| WHILE LPAREN Exp RPAREN{semantic_stacks->whilecounter++;semantic_stacks->new_scope();} Statement {semantic_stacks->whilecounter--;semantic_stacks->exit_scope();}
 		| BREAK SC  {if(semantic_stacks->whilecounter==0)
                      		{output::errorUnexpectedBreak(yylineno);}}
 		| CONTINUE SC  {if(semantic_stacks->whilecounter==0)
 		{output::errorUnexpectedContinue(yylineno);}}
 		;
+IfExp:  IF LPAREN Exp {semantic_stacks->new_scope();}
 
 Call:		ID LPAREN ExpList RPAREN  {if(!semantic_stacks->is_exsists($1->name)){output::errorUndef(yylineno,$1->name);}
                                        		if(!semantic_stacks->is_exsists($1->name)){output::errorUndefFunc(yylineno,$1->name);}
-                                       		vector<pair<TokenType,string>>* args=semantic_stacks->get_args($1->name);
-                                       		if(args->size()!=$3->get_vars()->size())
-                                       		   output::errorPrototypeMismatch(yylineno,$1->name,*($3->to_string_vector()));
-                                       		for(int i=0; i<args->size();i++)
+                                       		vector<pair<TokenType,string>>* func_args=semantic_stacks->get_args($1->name);
+                                       		if(func_args->size()!=$3->get_vars()->size())
+                                       		   {output::errorPrototypeMismatch(yylineno,$1->name,*(semantic_stacks->get_string_args($1->name)));}
+                                       		for(int i=0; i<func_args->size();i++)
                                        		{
-                                       		    if(args->at(i).first != $3->get_vars()->at(i).type)
-                                                   		    output::errorPrototypeMismatch(yylineno,$1->name,*($3->to_string_vector()));
+                                       	       if(func_args->at(i).first != $3->get_vars()->at(i).type)
+                                                   		    output::errorPrototypeMismatch(yylineno,$1->name,*(semantic_stacks->get_string_args($1->name)));
                                        		}
                                        		}
 		| ID LPAREN RPAREN  {
@@ -173,13 +173,13 @@ Call:		ID LPAREN ExpList RPAREN  {if(!semantic_stacks->is_exsists($1->name)){out
 		}
 		;
 
-ExpList:		Exp  {ExpList *explist = new ExpList(); explist->get_vars()->push_back(Exp(*$1));$$=explist;}
+ExpList:		Exp {ExpList *explist = new ExpList(); explist->vars->push_back(Exp(*$1));$$=explist;}
 		| Exp COMMA ExpList  {Exp* exp= new Exp($1->type,$1->name,$1->value);$3->get_vars()->push_back(Exp(*exp));$$=$3;}
 		;
 
-Type:		INT  {$$->type=TokenType::TOKEN_INT;}
-		| BYTE  {$$->type=TokenType::TOKEN_B;}
-		| BOOL  {$$->type=TokenType::TOKEN_BOOL;}
+Type:		INT  {$$=new Node(TokenType::TOKEN_INT,"",0);}
+		| BYTE  {$$=new Node(TokenType::TOKEN_B,"",0);}
+		| BOOL  {$$=new Node(TokenType::TOKEN_BOOL,"",0);}
 		;
 
 Exp:		LPAREN Exp RPAREN  {
@@ -225,7 +225,10 @@ Exp:		LPAREN Exp RPAREN  {
 						$$ = new Exp(new_type, std::to_string(new_val), new_val);
 		}
 		| ID  {
-			$$ = new Exp($1->type, $1->name,0);
+		TokenType type=semantic_stacks->get_type($1->name);
+		if(TOKEN_UNDIF==type)
+		    output::errorUndef(yylineno, $1->name);
+		$$ = new Exp(type, $1->name,0);
 		}
 		| Call  {}
 		| NUM {      $$->type = $1->type;
@@ -236,7 +239,7 @@ Exp:		LPAREN Exp RPAREN  {
       if ($1->value > INT_MAX) {
         output::errorByteTooLarge (yylineno, std::to_string($1->value));}
         }
-		| STRING  {
+		| STRING {
 			$$ = new Exp($1->type, $1->name, $1->value);
 		}
 		| TRUE  {
@@ -264,7 +267,7 @@ Exp:		LPAREN Exp RPAREN  {
 						else $$ = new Exp($1->type, "TRUE", new_val);
 		}		
 		| Exp RELOP Exp  {
-		        if($1->type != TokenType::TOKEN_BOOL || $3->type != TokenType::TOKEN_BOOL)
+		        if($1->type == TokenType::TOKEN_UNDIF || $1->type == TokenType::TOKEN_STRING || $3->type == TokenType::TOKEN_UNDIF || $3->type == TokenType::TOKEN_STRING )
 		                    output::errorMismatch(yylineno);
 		        int new_val;
 						if($2->name == "==")
@@ -279,8 +282,8 @@ Exp:		LPAREN Exp RPAREN  {
 							new_val = $1->value <= $3->value;
 						if($2->name == ">=")
 							new_val = $1->value >= $3->value;
-						if(new_val == 1) $$ = new Exp($1->type,"TRUE",new_val);
-						else $$ = new Exp($1->type,"FALSE",new_val);
+						if(new_val == 1) $$ = new Exp(TokenType::TOKEN_BOOL,"TRUE",new_val);
+						else $$ = new Exp(TokenType::TOKEN_BOOL,"FALSE",new_val);
 						
 		}
 		| LPAREN Type RPAREN Exp   {

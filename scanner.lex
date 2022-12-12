@@ -39,31 +39,39 @@ continue {return CONTINUE;}
 \{ {return LBRACE;}
 \} {return RBRACE;}
 = {return ASSIGN;}
-[<>][=]? { yylval->type = TOKEN_UNDIF;
+[<>][=]? {
+yylval=new Node();
+yylval->type = TOKEN_UNDIF;
         yylval->name = std::string(yytext);
         return RELOP;}
 [!=][=] {
+yylval=new Node();
         yylval->type = TOKEN_UNDIF;
         yylval->name = std::string(yytext);
         return RELOP;}
 [\*\/] {
+yylval=new Node();
         yylval->type = TOKEN_UNDIF;
         yylval->name = std::string(yytext);
         return MULTI;}
 [\-\+] {
+yylval=new Node();
         yylval->type = TOKEN_UNDIF;
         yylval->name = std::string(yytext);
         return PLUS;}
 
-{id} {
+[A-Za-z][A-Za-z0-9]* {
+yylval=new Node();
         yylval->type = TOKEN_ID;
         yylval->name = std::string(yytext);
         return ID;}
-{number} {
+0|([1-9][0-9]*) {
+yylval=new Node();
         yylval->type = TOKEN_INT;
         yylval->value = std::atoi(yytext);
         return NUM;}
 \"([^\n\r\"\\]|\\[rnt\"\\])+\" {
+yylval=new Node();
         yylval->type = TOKEN_STRING;
         yylval->name = std::string(yytext);
         return STRING;}

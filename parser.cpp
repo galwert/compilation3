@@ -3,7 +3,7 @@
 //
 
 #include "parser.hpp"
-
+#include "hw3_output.hpp"
 
 
 // Table entry
@@ -35,10 +35,36 @@ void Stacks::new_scope(){
     else
         offsets_stack->push(offsets_stack->top());
 }
-void Stacks::exit_scope(){
+string Token_to_string(TokenType type)
+        {
+    if(type==TOKEN_INT)
+        return "INT";
+    if(type==TOKEN_BOOL)
+        return "BOOL";
+    if(type==TOKEN_B)
+        return "B";
+    if(type==TOKEN_STRING)
+        return "STRING";
+    return "VOID";
+        }
+void Stacks::exit_scope() {
+
+    output::endScope();
+    vector < table_entry * >* scope = this->tables_stack->at(tables_stack->size() - 1);
+    for (int i = 0; i < scope->size(); i++) {
+        if (scope->at(i)->is_func) {
+            printf("%s %s %d\n",scope->at(i)->name.c_str(),
+                   output::makeFunctionType(Token_to_string(scope->at(i)->type), *get_string_args(scope->at(i)->name)).c_str(),0);
+        }
+        else
+        {
+            output::printID(scope->at(i)->name,scope->at(i)->offset,Token_to_string(scope->at(i)->type));
+        }
+    }
     tables_stack->pop_back();
     offsets_stack->pop();
 }
+
 void Stacks::new_entry(string name, TokenType type){
     int off=offsets_stack->top();
     offsets_stack->pop();
@@ -46,10 +72,10 @@ void Stacks::new_entry(string name, TokenType type){
     offsets_stack->push(off+1);
 }
 void Stacks::new_func(string name, TokenType type,vector<pair<TokenType,string>>* arguments){
-    tables_stack->back()->push_back(new table_entry(name,type,0,true,arguments));
-    new_scope();
+    tables_stack->at(0)->push_back(new table_entry(name,type,0,true,arguments));
+    this->new_scope();
     for(int i=0; i<arguments->size();i++)
-        tables_stack->back()->push_back(new table_entry(name,type,-i-1));
+        tables_stack->back()->push_back(new table_entry(arguments->at(i).second,arguments->at(i).first,-i-1));
 }
 bool Stacks::is_exsists(string name){
     for(int i=0; i<tables_stack->size();i++)
@@ -57,7 +83,8 @@ bool Stacks::is_exsists(string name){
         int size=tables_stack->at(i)->size();
         for(int j=0;j<size;j++)
             if(tables_stack->at(i)->at(j)->name==name)
-                return true;
+            {
+                return true;}
     }
     return false;
 }
@@ -113,7 +140,7 @@ vector<string>* Stacks::get_string_args(string name){
                 vector<string>* string_args = new vector<string>();
                 vector<pair<TokenType,string>>* arguments = tables_stack->at(i)->at(j)->arguments;
                 for(int k = 0;k<arguments->size();k++)
-                    string_args->push_back(arguments->at(k).second);
+                    string_args->push_back(Token_to_string(arguments->at(k).first));
                 return string_args;
             }
         }
@@ -155,7 +182,7 @@ vector<string>* ExpList::to_string_vector(){
     vector<string>* new_vars = new vector<string>();
     for(int i=0; i<this->vars->size();i++)
     {
-        new_vars->push_back(vars->at(i).name);
+        new_vars->push_back(Token_to_string(vars->at(i).type));
     }
     return  new_vars;
 }

@@ -54,9 +54,9 @@ extern int yydebug;
     YYEOF = 0,                     /* "end of file"  */
     YYerror = 256,                 /* error  */
     YYUNDEF = 257,                 /* "invalid token"  */
-    ID = 258,                      /* ID  */
-    NUM = 259,                     /* NUM  */
-    STRING = 260,                  /* STRING  */
+    NUM = 258,                     /* NUM  */
+    STRING = 259,                  /* STRING  */
+    ID = 260,                      /* ID  */
     VOID = 261,                    /* VOID  */
     INT = 262,                     /* INT  */
     BYTE = 263,                    /* BYTE  */
