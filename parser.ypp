@@ -8,6 +8,43 @@ extern int yylineno;
 using namespace std;
 int yyerror(const char * const s);
 int yylex(void);
+TokenType convert_table[5][5]={
+        {/*UNDIF TO*/
+                /*TOKEN_UNDIF*/TOKEN_UNDIF,
+                /*TOKEN_INT*/TOKEN_UNDIF,
+                /*TOKEN_B*/TOKEN_UNDIF,
+                /*TOKEN_BOOL*/TOKEN_UNDIF,
+                /*TOKEN_STRING*/TOKEN_UNDIF
+        },
+        {/*INT TO*/
+                /*TOKEN_UNDIF*/TOKEN_UNDIF,
+                /*TOKEN_INT*/TOKEN_INT,
+                /*TOKEN_B*/TOKEN_INT,
+                /*TOKEN_BOOL*/TOKEN_UNDIF,/*not sure*/
+                /*TOKEN_STRING*/TOKEN_UNDIF
+        },
+        {/*B TO*/
+                /*TOKEN_UNDIF*/TOKEN_UNDIF,
+                /*TOKEN_INT*/TOKEN_B,
+                /*TOKEN_B*/TOKEN_B,
+                /*TOKEN_BOOL*/TOKEN_UNDIF,
+                /*TOKEN_STRING*/TOKEN_UNDIF
+        },
+        {/*BOOL TO*/
+                /*TOKEN_UNDIF*/TOKEN_UNDIF,
+                /*TOKEN_INT*/TOKEN_UNDIF,
+                /*TOKEN_B*/TOKEN_UNDIF,
+                /*TOKEN_BOOL*/TOKEN_BOOL,
+                /*TOKEN_STRING*/TOKEN_UNDIF
+        },
+        {/*STRING TO*/
+                /*TOKEN_UNDIF*/TOKEN_UNDIF,
+                /*TOKEN_INT*/TOKEN_UNDIF,
+                /*TOKEN_B*/TOKEN_UNDIF,
+                /*TOKEN_BOOL*/TOKEN_UNDIF,
+                /*TOKEN_STRING*/TOKEN_STRING
+        }
+};
 
 Stacks* semantic_stacks;
 %}

@@ -4,16 +4,7 @@
 
 #include "parser.hpp"
 
-// Node
-Node::Node(TokenType type,std::string name,int value) {
-    this->type=type;
-    this->name=name;
-    this->value=value;
-}
 
-// Exp
-Exp::Exp(TokenType type,std::string name,int value): Node( type, name, value){}
-Exp::Exp(const Node &exp): Node( exp.type, exp.name, exp.value){}
 
 // Table entry
 table_entry::table_entry(std::string name,TokenType type,int offset,bool is_func, vector<pair<TokenType,string>>* arguments){

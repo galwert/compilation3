@@ -1,7 +1,7 @@
 
 %{
 #include <stdio.h>
-#include "parser.hpp"
+#include "Node.h"
 #define YYSTYPE Node*
 #include "parser.tab.hpp"
 #include "hw3_output.hpp"

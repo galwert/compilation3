@@ -70,16 +70,54 @@
 #line 2 "parser.ypp"
 
 #include <iostream>
+#include "parser.hpp"
+#include "hw3_output.hpp"
+#include <climits>
+extern int yylineno;
 using namespace std;
 int yyerror(const char * const s);
 int yylex(void);
-#include "hw3_output.h"
-#include "declarations.h"
-extern int yylineno;
-#include <climits>
+TokenType convert_table[5][5]={
+        {/*UNDIF TO*/
+                /*TOKEN_UNDIF*/TOKEN_UNDIF,
+                /*TOKEN_INT*/TOKEN_UNDIF,
+                /*TOKEN_B*/TOKEN_UNDIF,
+                /*TOKEN_BOOL*/TOKEN_UNDIF,
+                /*TOKEN_STRING*/TOKEN_UNDIF
+        },
+        {/*INT TO*/
+                /*TOKEN_UNDIF*/TOKEN_UNDIF,
+                /*TOKEN_INT*/TOKEN_INT,
+                /*TOKEN_B*/TOKEN_INT,
+                /*TOKEN_BOOL*/TOKEN_UNDIF,/*not sure*/
+                /*TOKEN_STRING*/TOKEN_UNDIF
+        },
+        {/*B TO*/
+                /*TOKEN_UNDIF*/TOKEN_UNDIF,
+                /*TOKEN_INT*/TOKEN_B,
+                /*TOKEN_B*/TOKEN_B,
+                /*TOKEN_BOOL*/TOKEN_UNDIF,
+                /*TOKEN_STRING*/TOKEN_UNDIF
+        },
+        {/*BOOL TO*/
+                /*TOKEN_UNDIF*/TOKEN_UNDIF,
+                /*TOKEN_INT*/TOKEN_UNDIF,
+                /*TOKEN_B*/TOKEN_UNDIF,
+                /*TOKEN_BOOL*/TOKEN_BOOL,
+                /*TOKEN_STRING*/TOKEN_UNDIF
+        },
+        {/*STRING TO*/
+                /*TOKEN_UNDIF*/TOKEN_UNDIF,
+                /*TOKEN_INT*/TOKEN_UNDIF,
+                /*TOKEN_B*/TOKEN_UNDIF,
+                /*TOKEN_BOOL*/TOKEN_UNDIF,
+                /*TOKEN_STRING*/TOKEN_STRING
+        }
+};
+
 Stacks* semantic_stacks;
 
-#line 83 "parser.tab.cpp"
+#line 121 "parser.tab.cpp"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -542,14 +580,14 @@ static const yytype_int8 yytranslate[] =
 
 #if YYDEBUG
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
-static const yytype_uint8 yyrline[] =
+static const yytype_int16 yyrline[] =
 {
-       0,    55,    55,    58,    59,    64,    63,    70,    71,    74,
-      75,    77,    78,    81,    83,    84,    87,    87,    88,    90,
-      97,   104,   105,   107,   109,   110,   111,   111,   112,   114,
-     118,   129,   138,   139,   142,   143,   144,   147,   151,   160,
-     175,   190,   193,   194,   196,   202,   205,   208,   211,   215,
-     222,   229,   249
+       0,    93,    93,    96,    97,   102,   101,   107,   108,   111,
+     112,   114,   115,   118,   120,   121,   124,   124,   125,   127,
+     134,   141,   142,   144,   146,   147,   148,   148,   149,   151,
+     155,   166,   175,   176,   179,   180,   181,   184,   188,   196,
+     211,   226,   229,   230,   232,   238,   241,   244,   247,   251,
+     258,   265,   285
 };
 #endif
 
@@ -1199,112 +1237,111 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* Program: Funcs  */
-#line 55 "parser.ypp"
+#line 93 "parser.ypp"
                       {semantic_stacks=new Stacks();}
-#line 1205 "parser.tab.cpp"
-    break;
-
-  case 3: /* Funcs: %empty  */
-#line 58 "parser.ypp"
-                            {output::errorMainMissing();}
-#line 1211 "parser.tab.cpp"
-    break;
-
-  case 4: /* Funcs: FuncDecl Funcs  */
-#line 59 "parser.ypp"
-                                 {if(!semantic_stacks->is_exsists("main")||!semantic_stacks->is_func("main"))
-		output::errorMainMissing();}
-#line 1218 "parser.tab.cpp"
-    break;
-
-  case 5: /* $@1: %empty  */
-#line 64 "parser.ypp"
-            {
-             semantic_stacks->new_func(yyvsp[-4]->name,yyvsp[-5]->type,yyvsp[-2]->args);semantic_stacks->new_scope();}
-#line 1225 "parser.tab.cpp"
-    break;
-
-  case 6: /* FuncDecl: RetType ID LPAREN Formals RPAREN LBRACE $@1 Statements RBRACE  */
-#line 66 "parser.ypp"
-                                { semantic_stacks->exit_scope();}
-#line 1231 "parser.tab.cpp"
-    break;
-
-  case 7: /* RetType: Type  */
-#line 70 "parser.ypp"
-                             {yyval->type=yyvsp[0]->type;}
-#line 1237 "parser.tab.cpp"
-    break;
-
-  case 8: /* RetType: VOID  */
-#line 71 "parser.ypp"
-                        {yyval->type=yyvsp[0]->type;}
 #line 1243 "parser.tab.cpp"
     break;
 
-  case 9: /* Formals: %empty  */
-#line 74 "parser.ypp"
-                            {yyval=new FormalList();}
+  case 3: /* Funcs: %empty  */
+#line 96 "parser.ypp"
+                            {output::errorMainMissing();}
 #line 1249 "parser.tab.cpp"
     break;
 
+  case 4: /* Funcs: FuncDecl Funcs  */
+#line 97 "parser.ypp"
+                                 {if(!semantic_stacks->is_exsists("main")||!semantic_stacks->is_func("main"))
+		output::errorMainMissing();}
+#line 1256 "parser.tab.cpp"
+    break;
+
+  case 5: /* $@1: %empty  */
+#line 102 "parser.ypp"
+            {semantic_stacks->new_func(yyvsp[-4]->name,yyvsp[-5]->type,yyvsp[-2]->get_args());semantic_stacks->new_scope();}
+#line 1262 "parser.tab.cpp"
+    break;
+
+  case 6: /* FuncDecl: RetType ID LPAREN Formals RPAREN LBRACE $@1 Statements RBRACE  */
+#line 103 "parser.ypp"
+                                { semantic_stacks->exit_scope();}
+#line 1268 "parser.tab.cpp"
+    break;
+
+  case 7: /* RetType: Type  */
+#line 107 "parser.ypp"
+                             {yyval->type=yyvsp[0]->type;}
+#line 1274 "parser.tab.cpp"
+    break;
+
+  case 8: /* RetType: VOID  */
+#line 108 "parser.ypp"
+                        {yyval->type=yyvsp[0]->type;}
+#line 1280 "parser.tab.cpp"
+    break;
+
+  case 9: /* Formals: %empty  */
+#line 111 "parser.ypp"
+                            {yyval=new FormalList();}
+#line 1286 "parser.tab.cpp"
+    break;
+
   case 10: /* Formals: FormalsList  */
-#line 75 "parser.ypp"
+#line 112 "parser.ypp"
                               {yyval=new FormalList();}
-#line 1255 "parser.tab.cpp"
+#line 1292 "parser.tab.cpp"
     break;
 
   case 11: /* FormalsList: FormalDecl  */
-#line 77 "parser.ypp"
-                           {yyval = new FormalList(); yyval->args.push_back(yyvsp[0]->type);}
-#line 1261 "parser.tab.cpp"
+#line 114 "parser.ypp"
+                           {yyval = new FormalList(); yyval->get_args()->push_back(pair<TokenType,string>(yyvsp[0]->type,yyvsp[0]->name));}
+#line 1298 "parser.tab.cpp"
     break;
 
   case 12: /* FormalsList: FormalDecl COMMA FormalsList  */
-#line 78 "parser.ypp"
-                                               {yyvsp[0]->args.push_back(new pair<TokenType,string>(yyvsp[-2]->type,yyvsp[-2]->name));yyval=yyvsp[0];}
-#line 1267 "parser.tab.cpp"
-    break;
-
-  case 13: /* FormalDecl: Type ID  */
-#line 81 "parser.ypp"
-                        {yyval=new Node(yyvsp[-1]->type,yyvsp[0]->name,0);}
-#line 1273 "parser.tab.cpp"
-    break;
-
-  case 14: /* Statements: Statement  */
-#line 83 "parser.ypp"
-                           {}
-#line 1279 "parser.tab.cpp"
-    break;
-
-  case 15: /* Statements: Statements Statement  */
-#line 84 "parser.ypp"
-                                        {}
-#line 1285 "parser.tab.cpp"
-    break;
-
-  case 16: /* $@2: %empty  */
-#line 87 "parser.ypp"
-                       {semantic_stacks->new_scope();}
-#line 1291 "parser.tab.cpp"
-    break;
-
-  case 17: /* Statement: LBRACE $@2 Statements RBRACE  */
-#line 87 "parser.ypp"
-                                                                         {semantic_stacks->exit_scope();}
-#line 1297 "parser.tab.cpp"
-    break;
-
-  case 18: /* Statement: Type ID SC  */
-#line 88 "parser.ypp"
-                              {if(semantic_stacks->is_exsists(yyvsp[-2]->name)){output::errorDef(yylineno,yyvsp[-2]->name);}
-		yyval=new Node(yyvsp[-2]->type,yyvsp[-1]->name,0); semantic_stacks->new_entry(yyvsp[-1]->name,yyvsp[-2]->type);}
+#line 115 "parser.ypp"
+                                               {yyvsp[0]->get_args()->push_back(pair<TokenType,string>(yyvsp[-2]->type,yyvsp[-2]->name));yyval=yyvsp[0];}
 #line 1304 "parser.tab.cpp"
     break;
 
+  case 13: /* FormalDecl: Type ID  */
+#line 118 "parser.ypp"
+                        {yyval=new Node(yyvsp[-1]->type,yyvsp[0]->name,0);}
+#line 1310 "parser.tab.cpp"
+    break;
+
+  case 14: /* Statements: Statement  */
+#line 120 "parser.ypp"
+                           {}
+#line 1316 "parser.tab.cpp"
+    break;
+
+  case 15: /* Statements: Statements Statement  */
+#line 121 "parser.ypp"
+                                        {}
+#line 1322 "parser.tab.cpp"
+    break;
+
+  case 16: /* $@2: %empty  */
+#line 124 "parser.ypp"
+                       {semantic_stacks->new_scope();}
+#line 1328 "parser.tab.cpp"
+    break;
+
+  case 17: /* Statement: LBRACE $@2 Statements RBRACE  */
+#line 124 "parser.ypp"
+                                                                         {semantic_stacks->exit_scope();}
+#line 1334 "parser.tab.cpp"
+    break;
+
+  case 18: /* Statement: Type ID SC  */
+#line 125 "parser.ypp"
+                              {if(semantic_stacks->is_exsists(yyvsp[-2]->name)){output::errorDef(yylineno,yyvsp[-2]->name);}
+		yyval=new Node(yyvsp[-2]->type,yyvsp[-1]->name,0); semantic_stacks->new_entry(yyvsp[-1]->name,yyvsp[-2]->type);}
+#line 1341 "parser.tab.cpp"
+    break;
+
   case 19: /* Statement: Type ID ASSIGN Exp SC  */
-#line 90 "parser.ypp"
+#line 127 "parser.ypp"
                                          {if(semantic_stacks->is_exsists(yyvsp[-3]->name)){output::errorDef(yylineno,yyvsp[-3]->name);}
 		if(convert_table[yyvsp[-3]->type][yyvsp[-1]->type]==false)//check which converstions are relevent
         		    { output::errorMismatch(yylineno);}
@@ -1312,11 +1349,11 @@ yyreduce:
         		    {output::errorByteTooLarge (yylineno, std::to_string(yyvsp[-2]->value));}
 		            yyval=new Node(yyvsp[-4]->type,yyvsp[-3]->name,yyvsp[-1]->value);
 		             semantic_stacks->new_entry(yyvsp[-3]->name,yyvsp[-4]->type);}
-#line 1316 "parser.tab.cpp"
+#line 1353 "parser.tab.cpp"
     break;
 
   case 20: /* Statement: ID ASSIGN Exp SC  */
-#line 97 "parser.ypp"
+#line 134 "parser.ypp"
                                     {
 		if(semantic_stacks->is_exsists(yyvsp[-3]->name)){output::errorUndef(yylineno,yyvsp[-3]->name);}
 		if(convert_table[yyvsp[-3]->type][yyvsp[-1]->type]==false)
@@ -1324,149 +1361,148 @@ yyreduce:
 		    if(yyvsp[-3]->type==TokenType::TOKEN_B&&yyvsp[-1]->value>255)
 		    {output::errorByteTooLarge (yylineno, std::to_string(yyvsp[-1]->value));}
 		    yyvsp[-3]->value=yyvsp[-1]->value;}
-#line 1328 "parser.tab.cpp"
+#line 1365 "parser.tab.cpp"
     break;
 
   case 21: /* Statement: Call SC  */
-#line 104 "parser.ypp"
+#line 141 "parser.ypp"
                            {}
-#line 1334 "parser.tab.cpp"
+#line 1371 "parser.tab.cpp"
     break;
 
   case 22: /* Statement: RETURN SC  */
-#line 105 "parser.ypp"
+#line 142 "parser.ypp"
                             {if(semantic_stacks->get_func_type()!=TokenType::TOKEN_UNDIF)
 		output::errorMismatch(yylineno);}
-#line 1341 "parser.tab.cpp"
+#line 1378 "parser.tab.cpp"
     break;
 
   case 23: /* Statement: RETURN Exp SC  */
-#line 107 "parser.ypp"
+#line 144 "parser.ypp"
                                 {if(semantic_stacks->get_func_type()!=yyvsp[-1]->type)
                          		output::errorMismatch(yylineno);}
-#line 1348 "parser.tab.cpp"
+#line 1385 "parser.tab.cpp"
     break;
 
   case 24: /* Statement: IF LPAREN Exp RPAREN Statement  */
-#line 109 "parser.ypp"
+#line 146 "parser.ypp"
                                                  {}
-#line 1354 "parser.tab.cpp"
+#line 1391 "parser.tab.cpp"
     break;
 
   case 25: /* Statement: IF LPAREN Exp RPAREN Statement ELSE Statement  */
-#line 110 "parser.ypp"
+#line 147 "parser.ypp"
                                                                 {}
-#line 1360 "parser.tab.cpp"
+#line 1397 "parser.tab.cpp"
     break;
 
   case 26: /* $@3: %empty  */
-#line 111 "parser.ypp"
+#line 148 "parser.ypp"
                                          {semantic_stacks->whilecounter++;semantic_stacks->new_scope();}
-#line 1366 "parser.tab.cpp"
+#line 1403 "parser.tab.cpp"
     break;
 
   case 27: /* Statement: WHILE LPAREN Exp RPAREN $@3 Statement  */
-#line 111 "parser.ypp"
+#line 148 "parser.ypp"
                                                                                                                    {semantic_stacks->whilecounter--;semantic_stacks->exit_scope();}
-#line 1372 "parser.tab.cpp"
+#line 1409 "parser.tab.cpp"
     break;
 
   case 28: /* Statement: BREAK SC  */
-#line 112 "parser.ypp"
+#line 149 "parser.ypp"
                             {if(semantic_stacks->whilecounter==0)
                      		{output::errorUnexpectedBreak(yylineno);}}
-#line 1379 "parser.tab.cpp"
+#line 1416 "parser.tab.cpp"
     break;
 
   case 29: /* Statement: CONTINUE SC  */
-#line 114 "parser.ypp"
+#line 151 "parser.ypp"
                                {if(semantic_stacks->whilecounter==0)
 		{output::errorUnexpectedContinue(yylineno);}}
-#line 1386 "parser.tab.cpp"
+#line 1423 "parser.tab.cpp"
     break;
 
   case 30: /* Call: ID LPAREN ExpList RPAREN  */
-#line 118 "parser.ypp"
+#line 155 "parser.ypp"
                                           {if(!semantic_stacks->is_exsists(yyvsp[-3]->name)){output::errorUndef(yylineno,yyvsp[-3]->name);}
                                        		if(!semantic_stacks->is_exsists(yyvsp[-3]->name)){output::errorUndefFunc(yylineno,yyvsp[-3]->name);}
-                                       		vector<TokenType> args=semantic_stacks->get_args(yyvsp[-3]->name);
-                                       		if(args.size()!=yyvsp[-1]->vars->size())
-                                       		   output::errorPrototypeMismatch(yylineno,yyvsp[-3]->name,yyvsp[-1]->to_string_vector());
-                                       		for(int i=0; i<args.size();i++)
+                                       		vector<pair<TokenType,string>>* args=semantic_stacks->get_args(yyvsp[-3]->name);
+                                       		if(args->size()!=yyvsp[-1]->get_vars()->size())
+                                       		   output::errorPrototypeMismatch(yylineno,yyvsp[-3]->name,*(yyvsp[-1]->to_string_vector()));
+                                       		for(int i=0; i<args->size();i++)
                                        		{
-                                       		    if(args.at(i).type!=yyvsp[-1]->vars->at(i)->type)
-                                                   		    output::errorPrototypeMismatch(yylineno,yyvsp[-3]->name,yyvsp[-1]->to_string_vector());
+                                       		    if(args->at(i).first != yyvsp[-1]->get_vars()->at(i).type)
+                                                   		    output::errorPrototypeMismatch(yylineno,yyvsp[-3]->name,*(yyvsp[-1]->to_string_vector()));
                                        		}
                                        		}
-#line 1402 "parser.tab.cpp"
+#line 1439 "parser.tab.cpp"
     break;
 
   case 31: /* Call: ID LPAREN RPAREN  */
-#line 129 "parser.ypp"
+#line 166 "parser.ypp"
                                     {
 		if(!semantic_stacks->is_exsists(yyvsp[-2]->name)){output::errorUndef(yylineno,yyvsp[-2]->name);}
         		if(!semantic_stacks->is_exsists(yyvsp[-2]->name)){output::errorUndefFunc(yylineno,yyvsp[-2]->name);}
-        		vector<TokenType> args=semantic_stacks->get_args(yyvsp[-2]->name);
-        		if(args.size()!=0)
-        		    output::errorPrototypeMismatch(yylineno,yyvsp[-2]->name,semantic_stacks->get_args(yyvsp[-2].name));
+        		vector<pair<TokenType,string>>* args=semantic_stacks->get_args(yyvsp[-2]->name);
+        		if(args->size()!=0)
+        		    output::errorPrototypeMismatch(yylineno,yyvsp[-2]->name,*(semantic_stacks->get_string_args(yyvsp[-2]->name)));
 		}
-#line 1414 "parser.tab.cpp"
+#line 1451 "parser.tab.cpp"
     break;
 
   case 32: /* ExpList: Exp  */
-#line 138 "parser.ypp"
-                             {ExpList *explist = new ExpList(); explist->vars->push_back(yyvsp[0]);yyval=explist;}
-#line 1420 "parser.tab.cpp"
+#line 175 "parser.ypp"
+                             {ExpList *explist = new ExpList(); explist->get_vars()->push_back(Exp(*yyvsp[0]));yyval=explist;}
+#line 1457 "parser.tab.cpp"
     break;
 
   case 33: /* ExpList: Exp COMMA ExpList  */
-#line 139 "parser.ypp"
-                                     {Exp* exp= new Exp(yyvsp[-2]->type,yyvsp[-2]->name,yyvsp[-2]->value);yyvsp[0]->vars->push_back(exp);yyval=yyvsp[0];}
-#line 1426 "parser.tab.cpp"
+#line 176 "parser.ypp"
+                                     {Exp* exp= new Exp(yyvsp[-2]->type,yyvsp[-2]->name,yyvsp[-2]->value);yyvsp[0]->get_vars()->push_back(Exp(*exp));yyval=yyvsp[0];}
+#line 1463 "parser.tab.cpp"
     break;
 
   case 34: /* Type: INT  */
-#line 142 "parser.ypp"
+#line 179 "parser.ypp"
                      {yyval->type=TokenType::TOKEN_INT;}
-#line 1432 "parser.tab.cpp"
+#line 1469 "parser.tab.cpp"
     break;
 
   case 35: /* Type: BYTE  */
-#line 143 "parser.ypp"
+#line 180 "parser.ypp"
                         {yyval->type=TokenType::TOKEN_B;}
-#line 1438 "parser.tab.cpp"
+#line 1475 "parser.tab.cpp"
     break;
 
   case 36: /* Type: BOOL  */
-#line 144 "parser.ypp"
+#line 181 "parser.ypp"
                         {yyval->type=TokenType::TOKEN_BOOL;}
-#line 1444 "parser.tab.cpp"
+#line 1481 "parser.tab.cpp"
     break;
 
   case 37: /* Exp: LPAREN Exp RPAREN  */
-#line 147 "parser.ypp"
+#line 184 "parser.ypp"
                                    {
 	yyval = new Exp(yyvsp[-1]->type, yyvsp[-1]->name, yyvsp[-1]->value);
 }
-#line 1452 "parser.tab.cpp"
+#line 1489 "parser.tab.cpp"
     break;
 
   case 38: /* Exp: Exp IF LPAREN Exp RPAREN ELSE Exp  */
-#line 151 "parser.ypp"
+#line 188 "parser.ypp"
                                                     {
-		    	if(yyvsp[-4]->type != TokenType::TOKEN_BOOL)
+		    	if(yyvsp[-3]->type != TokenType::TOKEN_BOOL)
             		  output::errorMismatch(yylineno);
-            	int new_val = yyvsp[-6]->value & yyvsp[-4]->value;
             	if(yyvsp[-4]->value==1)
             		    yyval = new Exp(yyvsp[-6]->type, yyvsp[-6]->name, yyvsp[-6]->value);
             		 else
-            		    yyval = new Exp(yyvsp[-2]->type, yyvsp[-2]->name, yyvsp[-2]->value);
+            		    yyval = new Exp(yyvsp[-1]->type, yyvsp[-1]->name, yyvsp[-1]->value);
 		}
-#line 1466 "parser.tab.cpp"
+#line 1502 "parser.tab.cpp"
     break;
 
   case 39: /* Exp: Exp PLUS Exp  */
-#line 160 "parser.ypp"
+#line 196 "parser.ypp"
                                {
 						TokenType new_type;
 						int new_val;
@@ -1482,11 +1518,11 @@ yyreduce:
 							new_val = yyvsp[-2]->value - yyvsp[0]->value;
 						yyval = new Exp(new_type, std::to_string(new_val), new_val);
 		}
-#line 1486 "parser.tab.cpp"
+#line 1522 "parser.tab.cpp"
     break;
 
   case 40: /* Exp: Exp MULTI Exp  */
-#line 175 "parser.ypp"
+#line 211 "parser.ypp"
                                  {
 						TokenType new_type;
 						int new_val;
@@ -1502,76 +1538,76 @@ yyreduce:
 							new_val = yyvsp[-2]->value / yyvsp[0]->value;
 						yyval = new Exp(new_type, std::to_string(new_val), new_val);
 		}
-#line 1506 "parser.tab.cpp"
+#line 1542 "parser.tab.cpp"
     break;
 
   case 41: /* Exp: ID  */
-#line 190 "parser.ypp"
+#line 226 "parser.ypp"
                       {
 			yyval = new Exp(yyvsp[0]->type, yyvsp[0]->name,0);
 		}
-#line 1514 "parser.tab.cpp"
+#line 1550 "parser.tab.cpp"
     break;
 
   case 42: /* Exp: Call  */
-#line 193 "parser.ypp"
+#line 229 "parser.ypp"
                         {}
-#line 1520 "parser.tab.cpp"
+#line 1556 "parser.tab.cpp"
     break;
 
   case 43: /* Exp: NUM  */
-#line 194 "parser.ypp"
+#line 230 "parser.ypp"
                       {      yyval->type = yyvsp[0]->type;
             yyval->value = yyvsp[0]->value;}
-#line 1527 "parser.tab.cpp"
+#line 1563 "parser.tab.cpp"
     break;
 
   case 44: /* Exp: NUM B  */
-#line 196 "parser.ypp"
+#line 232 "parser.ypp"
                          {
 		yyval->type = TokenType::TOKEN_B;
       yyval->value = yyvsp[-1]->value;
       if (yyvsp[-1]->value > INT_MAX) {
         output::errorByteTooLarge (yylineno, std::to_string(yyvsp[-1]->value));}
         }
-#line 1538 "parser.tab.cpp"
+#line 1574 "parser.tab.cpp"
     break;
 
   case 45: /* Exp: STRING  */
-#line 202 "parser.ypp"
+#line 238 "parser.ypp"
                           {
 			yyval = new Exp(yyvsp[0]->type, yyvsp[0]->name, yyvsp[0]->value);
 		}
-#line 1546 "parser.tab.cpp"
+#line 1582 "parser.tab.cpp"
     break;
 
   case 46: /* Exp: TRUE  */
-#line 205 "parser.ypp"
+#line 241 "parser.ypp"
                         {
 			yyval = new Exp(TokenType::TOKEN_BOOL, "TRUE",1);
 		}
-#line 1554 "parser.tab.cpp"
+#line 1590 "parser.tab.cpp"
     break;
 
   case 47: /* Exp: FALSE  */
-#line 208 "parser.ypp"
+#line 244 "parser.ypp"
                          {
 			yyval = new Exp(TokenType::TOKEN_BOOL, "FALSE",0);
 		}
-#line 1562 "parser.tab.cpp"
+#line 1598 "parser.tab.cpp"
     break;
 
   case 48: /* Exp: NOT Exp  */
-#line 211 "parser.ypp"
+#line 247 "parser.ypp"
                            {
 			if(yyvsp[0]->value == 0) yyval = new Exp(yyvsp[0]->type, "TRUE",1);
 			else yyval = new Exp(yyvsp[0]->type, "FALSE",0);
 		}
-#line 1571 "parser.tab.cpp"
+#line 1607 "parser.tab.cpp"
     break;
 
   case 49: /* Exp: Exp AND Exp  */
-#line 215 "parser.ypp"
+#line 251 "parser.ypp"
                                {
 						if(yyvsp[-2]->type != TokenType::TOKEN_BOOL || yyvsp[0]->type != TokenType::TOKEN_BOOL)
 		                    output::errorMismatch(yylineno);
@@ -1579,11 +1615,11 @@ yyreduce:
 						if(new_val == 0) yyval = new Exp(yyvsp[-2]->type, "FALSE", new_val);
 						else yyval = new Exp(yyvsp[-2]->type, "TRUE", new_val);
 		}
-#line 1583 "parser.tab.cpp"
+#line 1619 "parser.tab.cpp"
     break;
 
   case 50: /* Exp: Exp OR Exp  */
-#line 222 "parser.ypp"
+#line 258 "parser.ypp"
                               {
 		                if(yyvsp[-2]->type != TokenType::TOKEN_BOOL || yyvsp[0]->type != TokenType::TOKEN_BOOL)
 		                    output::errorMismatch(yylineno);
@@ -1591,11 +1627,11 @@ yyreduce:
 						if(new_val == 0) yyval = new Exp(yyvsp[-2]->type, "FALSE", new_val);
 						else yyval = new Exp(yyvsp[-2]->type, "TRUE", new_val);
 		}
-#line 1595 "parser.tab.cpp"
+#line 1631 "parser.tab.cpp"
     break;
 
   case 51: /* Exp: Exp RELOP Exp  */
-#line 229 "parser.ypp"
+#line 265 "parser.ypp"
                                  {
 		        if(yyvsp[-2]->type != TokenType::TOKEN_BOOL || yyvsp[0]->type != TokenType::TOKEN_BOOL)
 		                    output::errorMismatch(yylineno);
@@ -1616,11 +1652,11 @@ yyreduce:
 						else yyval = new Exp(yyvsp[-2]->type,"FALSE",new_val);
 						
 		}
-#line 1620 "parser.tab.cpp"
+#line 1656 "parser.tab.cpp"
     break;
 
   case 52: /* Exp: LPAREN Type RPAREN Exp  */
-#line 249 "parser.ypp"
+#line 285 "parser.ypp"
                                            {
 			if(convert_table[yyvsp[-2]->type][yyvsp[0]->type] == TokenType::TOKEN_UNDIF)
 				output::errorMismatch(yylineno);
@@ -1631,11 +1667,11 @@ yyreduce:
 				yyval = new Exp(yyvsp[-2]->type,yyvsp[0]->name,yyvsp[0]->value);
 			}
 		}
-#line 1635 "parser.tab.cpp"
+#line 1671 "parser.tab.cpp"
     break;
 
 
-#line 1639 "parser.tab.cpp"
+#line 1675 "parser.tab.cpp"
 
       default: break;
     }
@@ -1828,7 +1864,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 262 "parser.ypp"
+#line 298 "parser.ypp"
 
 
 int yyerror(const char* const s)
@@ -1838,6 +1874,3 @@ int yyerror(const char* const s)
   exit(1);
 }
 
-int main(){
-	return yyparse();
-}
