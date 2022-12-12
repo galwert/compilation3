@@ -8,6 +8,7 @@ extern int yylineno;
 using namespace std;
 int yyerror(const char * const s);
 int yylex(void);
+Stacks* semantic_stacks;
 TokenType convert_table[5][5]={
         {/*UNDIF TO*/
                 /*TOKEN_UNDIF*/TOKEN_UNDIF,
@@ -46,7 +47,7 @@ TokenType convert_table[5][5]={
         }
 };
 
-Stacks* semantic_stacks;
+
 %}
 %token	ID
 %token	NUM
@@ -90,12 +91,12 @@ Stacks* semantic_stacks;
 %token RBRACE
 %%
 
-Program:	Funcs {semantic_stacks=new Stacks();}
+Program:    Funcs {semantic_stacks=new Stacks();}
 		;
 
-Funcs:		/*epsilon*/ {output::errorMainMissing();}
-		| FuncDecl Funcs {if(!semantic_stacks->is_exsists("main")||!semantic_stacks->is_func("main"))
-		output::errorMainMissing();}
+Funcs:		/*epsilon*/ {if(!semantic_stacks->is_exsists("main")||!semantic_stacks->is_func("main"))
+                         		output::errorMainMissing();}
+		| FuncDecl Funcs {}
 		;
 
 FuncDecl:	RetType ID LPAREN Formals RPAREN LBRACE
@@ -302,5 +303,9 @@ int yyerror(const char* const s)
   extern int yylineno;
   output::errorSyn(yylineno);
   exit(1);
+}
+
+int main(){
+	return yyparse();
 }
 

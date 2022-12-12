@@ -22,7 +22,7 @@ Stacks::Stacks(){
     whilecounter=0;
     tables_stack->push_back(new vector<table_entry*>());
     vector<pair<TokenType,string>>* args= new vector<pair<TokenType,string>> ();
-    args->push_back(pair<TokenType,string>(TOKEN_STRING,""));
+args->push_back(pair<TokenType,string>(TOKEN_STRING,""));
     tables_stack->at(0)->push_back(new table_entry("print",TOKEN_UNDIF,0,true,args));
     args= new vector<pair<TokenType,string>> ();
     args->push_back(pair<TokenType,string>(TOKEN_INT,""));
