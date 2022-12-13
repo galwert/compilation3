@@ -132,8 +132,8 @@ Statement:	LBRACE {semantic_stacks->new_scope();}Statements RBRACE {semantic_sta
 		            $$=new Node($1->type,$2->name,$4->value);
 		             semantic_stacks->new_entry($2->name,$1->type);}
 		| ID ASSIGN Exp SC {
-		if(semantic_stacks->is_exsists($1->name)){output::errorUndef(yylineno,$1->name);}
-		if(convert_table[$1->type][$3->type]==false)
+		if(!semantic_stacks->is_exsists($1->name)){output::errorUndef(yylineno,$1->name);}
+		if(convert_table[semantic_stacks->get_type($1->name)][$3->type]==false)
 		    { output::errorMismatch(yylineno);}
 		    if($1->type==TokenType::TOKEN_B&&$3->value>255)
 		    {output::errorByteTooLarge (yylineno, std::to_string($3->value));}
@@ -163,6 +163,7 @@ Call:		ID LPAREN ExpList RPAREN  {if(!semantic_stacks->is_exsists($1->name)){out
                                        	       if(func_args->at(i).first != $3->get_vars()->at(i).type)
                                                    		    output::errorPrototypeMismatch(yylineno,$1->name,*(semantic_stacks->get_string_args($1->name)));
                                        		}
+                                       		$$=new Exp(semantic_stacks->get_type($1->name),$1->name,0);
                                        		}
 		| ID LPAREN RPAREN  {
 		if(!semantic_stacks->is_exsists($1->name)){output::errorUndef(yylineno,$1->name);}
@@ -170,7 +171,8 @@ Call:		ID LPAREN ExpList RPAREN  {if(!semantic_stacks->is_exsists($1->name)){out
         		vector<pair<TokenType,string>>* args=semantic_stacks->get_args($1->name);
         		if(args->size()!=0)
         		    output::errorPrototypeMismatch(yylineno,$1->name,*(semantic_stacks->get_string_args($1->name)));
-		}
+
+		$$=new Exp(semantic_stacks->get_type($1->name),$1->name,0);}
 		;
 
 ExpList:		Exp {ExpList *explist = new ExpList(); explist->vars->push_back(Exp(*$1));$$=explist;}
@@ -304,7 +306,7 @@ Exp:		LPAREN Exp RPAREN  {
 int yyerror(const char* const s)
 {
   extern int yylineno;
-  output::errorSyn(yylineno);
+  output::errorSyn(yylineno+1);
   exit(1);
 }
 
