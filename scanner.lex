@@ -65,7 +65,7 @@ yylval=new Node();
         yylval->type = TOKEN_ID;
         yylval->name = std::string(yytext);
         return ID;}
-0|([1-9][0-9]*) {
+0|[1-9][0-9]* {
 yylval=new Node();
         yylval->type = TOKEN_INT;
         yylval->value = std::atoi(yytext);

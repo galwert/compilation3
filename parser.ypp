@@ -94,13 +94,15 @@ TokenType convert_table[5][5]={
 Program:   {semantic_stacks=new Stacks();} Funcs {semantic_stacks->exit_scope();}
 		;
 
-Funcs:		/*epsilon*/ {if(!semantic_stacks->is_exsists("main")||!semantic_stacks->is_func("main"))
+Funcs:		/*epsilon*/ {if(!semantic_stacks->is_exsists("main")||!semantic_stacks->is_func("main")||semantic_stacks->get_type("main")!=TokenType::TOKEN_UNDIF||semantic_stacks->get_args("main")->size()!=0)
                          		{output::errorMainMissing(); exit(2);}}
 		| FuncDecl Funcs {}
 		;
 
-FuncDecl:	RetType ID LPAREN Formals RPAREN LBRACE {semantic_stacks->new_func($2->name,$1->type,$4->get_args());}
-             Statements RBRACE { semantic_stacks->exit_scope();}
+FuncDecl:	RetType ID LPAREN Formals RPAREN  {if(semantic_stacks->is_exsists($2->name))
+                                                                              		{output::errorDef(yylineno,$2->name); exit(2);}
+                                                                              		semantic_stacks->new_func($2->name,$1->type,$4->get_args());}
+            LBRACE Statements RBRACE { semantic_stacks->exit_scope();}
 		;
 
 
@@ -122,10 +124,10 @@ Statements:	Statement  {}
 		;
 
 Statement:	LBRACE {semantic_stacks->new_scope();}Statements RBRACE {semantic_stacks->exit_scope();}
-		| Type ID SC {if(semantic_stacks->is_exsists($1->name)){output::errorDef(yylineno,$1->name); exit(2);}
+		| Type ID SC {if(semantic_stacks->is_exsists($2->name)){output::errorDef(yylineno,$2->name); exit(2);}
 		$$=new Node($1->type,$2->name,0); semantic_stacks->new_entry($2->name,$1->type);}
 		| Type ID ASSIGN Exp SC  {if(semantic_stacks->is_exsists($2->name)){output::errorDef(yylineno,$2->name); exit(2);}
-		if(convert_table[$1->type][$4->type]==false)
+		if(convert_table[$1->type][$4->type]==false||($1->type==TokenType::TOKEN_B && $4->type==TokenType::TOKEN_INT))
         		    { output::errorMismatch(yylineno); exit(2);}
         		    if($2->type==TokenType::TOKEN_B && $4->value>255)
         		    {output::errorByteTooLarge (yylineno, std::to_string($3->value)); exit(2);}
@@ -133,19 +135,19 @@ Statement:	LBRACE {semantic_stacks->new_scope();}Statements RBRACE {semantic_sta
 		             semantic_stacks->new_entry($2->name,$1->type);}
 		| ID ASSIGN Exp SC {
 		if(!semantic_stacks->is_exsists($1->name)){output::errorUndef(yylineno,$1->name); exit(2);}
-		if(convert_table[semantic_stacks->get_type($1->name)][$3->type]==false)
+		if(convert_table[semantic_stacks->get_type($1->name)][$3->type]==false||(semantic_stacks->get_type($1->name)==TokenType::TOKEN_B && $3->type==TokenType::TOKEN_INT))
 		    { output::errorMismatch(yylineno); exit(2);}
-		    if($1->type==TokenType::TOKEN_B&&$3->value>255)
+		    if($1->type==TokenType::TOKEN_B && $3->value>255)
 		    {output::errorByteTooLarge (yylineno, std::to_string($3->value)); exit(2);}
 		    $1->value=$3->value;}
 		| Call SC {}
 		| RETURN SC {if(semantic_stacks->get_func_type()!=TokenType::TOKEN_UNDIF)
-		output::errorMismatch(yylineno);}
+		{output::errorMismatch(yylineno);exit(2);}}
 		| RETURN Exp SC {
-		if(convert_table[$2->type][semantic_stacks->get_func_type()]==TokenType::TOKEN_UNDIF){
+		if(convert_table[$2->type][semantic_stacks->get_func_type()]==TokenType::TOKEN_UNDIF||(semantic_stacks->get_func_type()==TokenType::TOKEN_B && $2->type==TokenType::TOKEN_INT)){
                          		output::errorMismatch(yylineno);exit(2);}}
 		| IfExp RPAREN  Statement {semantic_stacks->exit_scope();}
-		| IfExp Statement ELSE Statement {semantic_stacks->exit_scope();}
+		| IfExp Statement {semantic_stacks->exit_scope();semantic_stacks->new_scope();} ELSE Statement {semantic_stacks->exit_scope();}
 		| WHILE LPAREN Exp RPAREN{if($3->type!=TokenType::TOKEN_BOOL){output::errorMismatch(yylineno);exit(2);}
 		        semantic_stacks->whilecounter++;semantic_stacks->new_scope();} Statement {semantic_stacks->whilecounter--;semantic_stacks->exit_scope();}
 		| BREAK SC  {if(semantic_stacks->whilecounter==0)
@@ -156,21 +158,21 @@ Statement:	LBRACE {semantic_stacks->new_scope();}Statements RBRACE {semantic_sta
 IfExp:  IF LPAREN Exp {if($3->type!=TokenType::TOKEN_BOOL){output::errorMismatch(yylineno);exit(2);}
         semantic_stacks->new_scope();}
 
-Call:		ID LPAREN ExpList RPAREN  {if(!semantic_stacks->is_exsists($1->name)){output::errorUndef(yylineno,$1->name); exit(2);}
+Call:		ID LPAREN ExpList RPAREN  {if(!semantic_stacks->is_exsists($1->name)){output::errorUndefFunc(yylineno,$1->name); exit(2);}
                                        		if(!semantic_stacks->is_exsists($1->name)){output::errorUndefFunc(yylineno,$1->name); exit(2);}
                                        		vector<pair<TokenType,string>>* func_args=semantic_stacks->get_args($1->name);
                                        		if(func_args->size()!=$3->get_vars()->size())
                                        		   {output::errorPrototypeMismatch(yylineno,$1->name,*(semantic_stacks->get_string_args($1->name))); exit(2);}
                                        		for(int i=0; i<func_args->size();i++)
                                        		{
-                                       	       if(convert_table[func_args->at(i).first][$3->get_vars()->at(i).type]==false)
+                                       	       if(convert_table[func_args->at(i).first][$3->get_vars()->at(i).type]==false||(func_args->at(i).first==TokenType::TOKEN_B && $3->get_vars()->at(i).type==TokenType::TOKEN_INT))
                                                    		    {output::errorPrototypeMismatch(yylineno,$1->name,*(semantic_stacks->get_string_args($1->name)));
                                                    		     exit(2);}
                                        		}
                                        		$$=new Exp(semantic_stacks->get_type($1->name),$1->name,0);
                                        		}
 		| ID LPAREN RPAREN  {
-		if(!semantic_stacks->is_exsists($1->name)){output::errorUndef(yylineno,$1->name); exit(2);}
+		if(!semantic_stacks->is_exsists($1->name)){output::errorUndefFunc(yylineno,$1->name); exit(2);}
         		if(!semantic_stacks->is_exsists($1->name)){output::errorUndefFunc(yylineno,$1->name); exit(2);}
         		vector<pair<TokenType,string>>* args=semantic_stacks->get_args($1->name);
         		if(args->size()!=0)
@@ -195,10 +197,10 @@ Exp:		LPAREN Exp RPAREN  {
 		| Exp IF LPAREN Exp RPAREN ELSE Exp {
 		    	if($4->type != TokenType::TOKEN_BOOL)
             		  {output::errorMismatch(yylineno); exit(2);}
-            	if($3->value==1)
+            	if($4->value==1)
             		    $$ = new Exp($1->type, $1->name, $1->value);
             		 else
-            		    $$ = new Exp($6->type, $6->name, $6->value);
+            		    $$ = new Exp($7->type, $7->name, $7->value);
 		}
 		| Exp PLUS Exp {
 						TokenType new_type;
@@ -213,6 +215,10 @@ Exp:		LPAREN Exp RPAREN  {
 							new_val = $1->value + $3->value;
 						else if($2->name == "-")
 							new_val = $1->value - $3->value;
+							if(new_type==TokenType::TOKEN_B&&new_val>255)
+                            {
+               				    output::errorByteTooLarge(yylineno,std::to_string(new_val));
+                            }
 						$$ = new Exp(new_type, std::to_string(new_val), new_val);
 		}
 		| Exp MULTI Exp  {
@@ -228,6 +234,10 @@ Exp:		LPAREN Exp RPAREN  {
 							new_val = $1->value * $3->value;
 						else if($2->name == "/")
 							new_val = $1->value / $3->value;
+						if(new_type==TokenType::TOKEN_B&&new_val>255)
+						{
+						    output::errorByteTooLarge(yylineno,std::to_string(new_val));
+						}
 						$$ = new Exp(new_type, std::to_string(new_val), new_val);
 		}
 		| ID  {
@@ -242,7 +252,7 @@ Exp:		LPAREN Exp RPAREN  {
 		| NUM B  {
 		$$->type = TokenType::TOKEN_B;
       $$->value = $1->value;
-      if ($1->value > INT_MAX) {
+      if ($1->value > 255) {
         output::errorByteTooLarge (yylineno, std::to_string($1->value)); exit(2);}
         }
 		| STRING {
@@ -273,7 +283,7 @@ Exp:		LPAREN Exp RPAREN  {
 						else $$ = new Exp($1->type, "TRUE", new_val);
 		}		
 		| Exp RELOP Exp  {//test 17 says we cannot compare bool
-		        if($1->type == TokenType::TOKEN_UNDIF || $1->type == TokenType::TOKEN_BOOL ||$1->type == TokenType::TOKEN_STRING || $3->type != $1->type||
+		        if($1->type == TokenType::TOKEN_UNDIF || $1->type == TokenType::TOKEN_BOOL ||$1->type == TokenType::TOKEN_STRING ||
 		         $3->type == TokenType::TOKEN_UNDIF || $3->type == TokenType::TOKEN_STRING ||$3->type == TokenType::TOKEN_BOOL)
 		                    {output::errorMismatch(yylineno); exit(2);}
 		        int new_val;
