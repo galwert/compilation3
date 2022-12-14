@@ -42,7 +42,7 @@ string Token_to_string(TokenType type)
     if(type==TOKEN_BOOL)
         return "BOOL";
     if(type==TOKEN_B)
-        return "B";
+        return "BYTE";
     if(type==TOKEN_STRING)
         return "STRING";
     return "VOID";
