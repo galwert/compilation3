@@ -77,6 +77,7 @@ yylval=new Node();
         return STRING;}
 
 \/\/[^\r\n]*[\r|\n|\r\n]? {;}
+
 [\t \n\r] {;}
 . {output::errorLex(yylineno); exit(1);}
 

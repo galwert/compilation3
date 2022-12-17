@@ -1014,17 +1014,17 @@ YY_RULE_SETUP
 case 32:
 /* rule 32 can match eol */
 YY_RULE_SETUP
-#line 80 "scanner.lex"
+#line 81 "scanner.lex"
 {;}
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 81 "scanner.lex"
+#line 82 "scanner.lex"
 {output::errorLex(yylineno); exit(1);}
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 83 "scanner.lex"
+#line 84 "scanner.lex"
 ECHO;
 	YY_BREAK
 #line 1031 "lex.yy.c"
@@ -2044,7 +2044,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 83 "scanner.lex"
+#line 84 "scanner.lex"
 
 
 

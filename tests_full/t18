@@ -6,3 +6,4 @@ c BOOL 1
 print (STRING)->VOID 0
 printi (INT)->VOID 0
 main ()->VOID 0
+line 6: syntax error

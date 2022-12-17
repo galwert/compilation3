@@ -1,0 +1,5 @@
+void main()
+{
+    print("good" if (5 < 3) else "bad");
+    print("good" if (5 > 3 and 3 < 5) else "bad");
+}

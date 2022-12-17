@@ -11,3 +11,4 @@ printi (INT)->VOID 0
 a ()->INT 0
 foo ()->INT 0
 main ()->VOID 0
+line 15: syntax error

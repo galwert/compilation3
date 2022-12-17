@@ -7,9 +7,10 @@
 
 
 // Table entry
-table_entry::table_entry(std::string name,TokenType type,int offset,bool is_func, vector<pair<TokenType,string>>* arguments){
+table_entry::table_entry(std::string name,TokenType type,int value,int offset,bool is_func, vector<pair<TokenType,string>>* arguments){
     this->type=type;
     this->name=name;
+    this->value=value;
     this->offset=offset;
     this->arguments=arguments;
     this->is_func=is_func;
@@ -23,10 +24,10 @@ Stacks::Stacks(){
     tables_stack->push_back(new vector<table_entry*>());
     vector<pair<TokenType,string>>* args= new vector<pair<TokenType,string>> ();
 args->push_back(pair<TokenType,string>(TOKEN_STRING,""));
-    tables_stack->at(0)->push_back(new table_entry("print",TOKEN_UNDIF,0,true,args));
+    tables_stack->at(0)->push_back(new table_entry("print",TOKEN_UNDIF,0,0,true,args));
     args= new vector<pair<TokenType,string>> ();
     args->push_back(pair<TokenType,string>(TOKEN_INT,""));
-    tables_stack->at(0)->push_back(new table_entry("printi",TOKEN_UNDIF,0,true,args));
+    tables_stack->at(0)->push_back(new table_entry("printi",TOKEN_UNDIF,0,0,true,args));
 }
 void Stacks::new_scope(){
     tables_stack->push_back(new vector<table_entry*>());
@@ -64,18 +65,21 @@ void Stacks::exit_scope() {
     tables_stack->pop_back();
     offsets_stack->pop();
 }
-
-void Stacks::new_entry(string name, TokenType type){
+void Stacks::update_last_func(int value)
+{
+    tables_stack->at(0)->back()->value=value;
+}
+void Stacks::new_entry(string name, TokenType type,int value){
     int off=offsets_stack->top();
     offsets_stack->pop();
-    tables_stack->back()->push_back(new table_entry(name,type,off));
+    tables_stack->back()->push_back(new table_entry(name,type,value,off));
     offsets_stack->push(off+1);
 }
 void Stacks::new_func(string name, TokenType type,vector<pair<TokenType,string>>* arguments){
-    tables_stack->at(0)->push_back(new table_entry(name,type,0,true,arguments));
+    tables_stack->at(0)->push_back(new table_entry(name,type,0,0,true,arguments));
     this->new_scope();
     for(int i=0; i<arguments->size();i++)
-        tables_stack->back()->push_back(new table_entry(arguments->at(i).second,arguments->at(i).first,-i-1));
+        tables_stack->back()->push_back(new table_entry(arguments->at(i).second,arguments->at(i).first,0,-i-1));
 }
 bool Stacks::is_exsists(string name){
     for(int i=0; i<tables_stack->size();i++)
@@ -87,6 +91,29 @@ bool Stacks::is_exsists(string name){
                 return true;}
     }
     return false;
+}
+int Stacks::get_value(string name){
+    for(int i=0; i<tables_stack->size();i++)
+    {
+        int size=tables_stack->at(i)->size();
+        for(int j=0;j<size;j++)
+            if(tables_stack->at(i)->at(j)->name==name)
+            {
+                return tables_stack->at(i)->at(j)->value;}
+    }
+    return 0;
+}
+
+int Stacks::set_value(string name,int value){
+    for(int i=0; i<tables_stack->size();i++)
+    {
+        int size=tables_stack->at(i)->size();
+        for(int j=0;j<size;j++)
+            if(tables_stack->at(i)->at(j)->name==name)
+            {
+                return tables_stack->at(i)->at(j)->value=value;}
+    }
+    return 0;
 }
 bool Stacks::is_func(string name){
     for(int i=0; i<tables_stack->size();i++)

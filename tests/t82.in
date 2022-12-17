@@ -1,0 +1,17 @@
+void printOk(bool isOk) {
+    if (isOk) print("ok");
+}
+
+void printInt(int x) {
+    printi(x);
+}
+
+void main()
+{
+    //these are ok :)
+    printInt(10 if (5>3) else 2);
+    printOk(true if (5>3) else false);
+    
+    // this is bad - missing () after if
+    print("ok" if 5>3 else "bad");
+}

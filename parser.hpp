@@ -18,11 +18,12 @@ class table_entry
 public:
     string name;
     TokenType type;
+    int value;
     int offset;
     vector<pair<TokenType,string>>* arguments;
     bool is_func;
 
-    table_entry(std::string name,TokenType type,int offset=0, bool is_func=false, vector<pair<TokenType,string>>* arguments = new vector<pair<TokenType,string>>());
+    table_entry(std::string name,TokenType type,int value,int offset=0, bool is_func=false, vector<pair<TokenType,string>>* arguments = new vector<pair<TokenType,string>>());
 };
 
 class Stacks
@@ -34,15 +35,18 @@ public:
     Stacks();
     void new_scope();
     void exit_scope();
-    void new_entry(string name, TokenType type);
+    void new_entry(string name, TokenType type,int value);
     void new_func(string name, TokenType type,vector<pair<TokenType,string>>* arguments);
     bool is_exsists(string name);
     bool is_func(string name);
     TokenType get_func_type(string name);
     TokenType get_func_type();
     TokenType get_type(string name);
+    void update_last_func(int value);
     vector<pair<TokenType,string>>* get_args(string name);
     vector<string>* get_string_args(string name);
+    int get_value(string name);
+    int set_value(string name,int value);
 };
 
 class FormalList: public Node
