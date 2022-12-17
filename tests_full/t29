@@ -20,4 +20,3 @@ foo3 ()->INT 0
 foo4 ()->INT 0
 foo5 (INT)->INT 0
 main ()->VOID 0
-line 27: syntax error

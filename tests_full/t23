@@ -8,4 +8,3 @@ printi (INT)->VOID 0
 foo (INT)->INT 0
 boo ()->INT 0
 main ()->VOID 0
-line 12: syntax error

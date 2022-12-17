@@ -68,18 +68,18 @@ TokenType convert_table[5][5]={
 %nonassoc IF
 %nonassoc RELOP
 %nonassoc CAST
-
+%token YYEOF
 %%
 
-Program:   {semantic_stacks=new Stacks();} Funcs {semantic_stacks->exit_scope();}
+Program:   {semantic_stacks=new Stacks();} Funcs YYEOF {if(!semantic_stacks->is_exsists("main")||!semantic_stacks->is_func("main")||semantic_stacks->get_type("main")!=TokenType::TOKEN_UNDIF||semantic_stacks->get_args("main")->size()!=0)
+                                                                               		{output::errorMainMissing(); exit(2);}} {semantic_stacks->exit_scope();}
 		;
 
-Funcs:		/*epsilon*/ {if(!semantic_stacks->is_exsists("main")||!semantic_stacks->is_func("main")||semantic_stacks->get_type("main")!=TokenType::TOKEN_UNDIF||semantic_stacks->get_args("main")->size()!=0)
-                         		{output::errorMainMissing(); exit(2);}}
+Funcs:		/*epsilon*/
 		| FuncDecl Funcs {}
 		;
 
-FuncDecl:	RetType ID LPAREN Formals RPAREN  {if(semantic_stacks->is_exsists($2->name))
+FuncDecl: RetType  ID LPAREN Formals RPAREN  {if(semantic_stacks->is_exsists($2->name))
                                                                               		{output::errorDef(yylineno,$2->name); exit(2);}
                                                                               		for(int i=0; i<$4->get_args()->size();i++){
                                                                               		if($4->get_args()->at(i).second == $2->name)
@@ -96,7 +96,16 @@ Formals:		/**/{$$=new FormalList();}
 		| FormalsList {$$=$1;}
 		;
 FormalsList:	FormalDecl {if(semantic_stacks->is_exsists($1->name)){output::errorDef(yylineno,$1->name); exit(2);}$$ = new FormalList(); $$->get_args()->insert($$->get_args()->begin(),pair<TokenType,string>($1->type,$1->name));}
-		| FormalDecl COMMA FormalsList {if(semantic_stacks->is_exsists($1->name)){output::errorDef(yylineno,$1->name);exit(2);}$3->get_args()->insert($3->get_args()->begin(),pair<TokenType,string>($1->type,$1->name));$$=$3;}
+		| FormalDecl COMMA FormalsList 
+			{vector<pair<TokenType,string>>* args = $3->get_args();
+			for(int i=0;i<args->size();i++)
+				if(args->at(i).second == $1->name)
+					{output::errorDef(yylineno,$1->name);exit(2);}
+			if(semantic_stacks->is_exsists($1->name)){
+				output::errorDef(yylineno,$1->name);
+				exit(2);
+				}
+			$3->get_args()->insert($3->get_args()->begin(),pair<TokenType,string>($1->type,$1->name));$$=$3;}
 		;
 
 FormalDecl: 	Type ID {$$=new Node($1->type,$2->name,0);}
@@ -184,6 +193,8 @@ Exp:		LPAREN Exp RPAREN  {
 		| Exp IF LPAREN Exp RPAREN ELSE Exp {
 		    	if($4->type != TokenType::TOKEN_BOOL)
             		  {output::errorMismatch(yylineno); exit(2);}
+				if(convert_table[$1->type][$7->type] == TokenType::TOKEN_UNDIF)
+					{output::errorMismatch(yylineno); exit(2);}
             	if($4->value==1)
             		    $$ = new Exp($1->type, $1->name, $1->value);
             		 else
@@ -315,6 +326,7 @@ int yyerror(const char* const s)
 }
 
 int main(){
+//yydebug=1;
 	return yyparse();
 }
 

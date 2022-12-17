@@ -1,5 +1,6 @@
 ---end scope---
-a INT 0
+hi1 BOOL 0
+hi2 BOOL 1
 ---end scope---
 print (STRING)->VOID 0
 printi (INT)->VOID 0
